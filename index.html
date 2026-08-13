@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MicroUtility Index</title>
+  <title>MicroUtility Suite</title>
   <style>
     :root {
       --bg: #0A0A0A;
@@ -140,16 +140,18 @@
       font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--accent);
+      margin-top: 2px;
     }
 
     .tool-desc {
       font-size: 0.85rem;
       color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     .card-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       margin-top: 4px;
     }
@@ -163,6 +165,7 @@
       color: #E0E0E0;
       font-weight: 500;
       font-family: var(--font-stack);
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
     .tool-card:hover .btn-sm {
@@ -178,7 +181,7 @@
     <!-- Header -->
     <header class="header">
       <h1 class="product-title">MicroUtility</h1>
-      <p class="description">Browser-native utility index and executable suite.</p>
+      <p class="description">Browser-native desktop utility index and tool launcher.</p>
     </header>
 
     <!-- Utility Index Panel -->
@@ -192,95 +195,95 @@
         type="text" 
         id="filterInput" 
         class="filter-input" 
-        placeholder="Filter tools by name or filename..." 
+        placeholder="Filter tools by name, filename, or capability..." 
         autocomplete="off"
       />
 
       <div class="tool-grid" id="toolGrid">
         
-        <a href="htmls/code-combine.html" class="tool-card" data-name="code combine code-combine.html">
+        <a href="htmls/code-combine.html" class="tool-card" data-name="code combine prompt llm code-combine.html">
           <div>
             <div class="tool-name">Code Combine</div>
             <div class="tool-path">htmls/code-combine.html</div>
           </div>
-          <p class="tool-desc">Merge multiple source code files into a single unified record.</p>
+          <p class="tool-desc">Merge source code directories into a single prompt-ready text file with automatic file tree indexing and build-artifact filtering.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/longmaths.html" class="tool-card" data-name="long maths longmaths.html">
+        <a href="htmls/longmaths.html" class="tool-card" data-name="long maths arithmetic division multiplication longmaths.html">
           <div>
-            <div class="tool-name">Long Maths</div>
+            <div class="tool-name">LongMaths</div>
             <div class="tool-path">htmls/longmaths.html</div>
           </div>
-          <p class="tool-desc">Arbitrary-precision numerical calculations and expression evaluator.</p>
+          <p class="tool-desc">Generate step-by-step visual arithmetic boards for long multiplication and division with BigInt precision and ASCII export.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/maniKeys.html" class="tool-card" data-name="mani keys maniKeys.html">
+        <a href="htmls/maniKeys.html" class="tool-card" data-name="mani keys meitei mayek manipuri keyboard maniKeys.html">
           <div>
-            <div class="tool-name">Mani Keys</div>
+            <div class="tool-name">ManiKeys</div>
             <div class="tool-path">htmls/maniKeys.html</div>
           </div>
-          <p class="tool-desc">Key-value object manipulator and transformation utility.</p>
+          <p class="tool-desc">Phonetic keyboard and transliteration engine for typing Meitei Mayek with real-time diacritic and final consonant handling.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/memberTree.html" class="tool-card" data-name="member tree memberTree.html">
+        <a href="htmls/memberTree.html" class="tool-card" data-name="member tree hierarchy org family memberTree.html">
           <div>
             <div class="tool-name">Member Tree</div>
             <div class="tool-path">htmls/memberTree.html</div>
           </div>
-          <p class="tool-desc">Hierarchical data parser and tree structure viewer.</p>
+          <p class="tool-desc">Interactive hierarchy tree and directory viewer featuring dynamic SVG connectors, focus navigation, and local storage persistence.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/metaHTML.html" class="tool-card" data-name="meta html metaHTML.html">
+        <a href="htmls/metaHTML.html" class="tool-card" data-name="meta html favicon pwa svg manifest metaHTML.html">
           <div>
             <div class="tool-name">Meta HTML</div>
             <div class="tool-path">htmls/metaHTML.html</div>
           </div>
-          <p class="tool-desc">Inspect, clean, and extract metadata structures from HTML markup.</p>
+          <p class="tool-desc">Convert a single SVG icon into PNG favicons, PWA asset packages, maskable icons, webmanifests, and HTML head tags.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/pdfToImages.html" class="tool-card" data-name="pdf to images pdfToImages.html">
+        <a href="htmls/pdfToImages.html" class="tool-card" data-name="pdf to images converter webp 300dpi pdfToImages.html">
           <div>
             <div class="tool-name">PDF to Images</div>
             <div class="tool-path">htmls/pdfToImages.html</div>
           </div>
-          <p class="tool-desc">Render PDF pages into 300 DPI WebP image files.</p>
+          <p class="tool-desc">Render PDF document pages into high-resolution 300 DPI WebP image files directly inside the browser with ZIP export.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/source-archive.html" class="tool-card" data-name="source archive source-archive.html">
+        <a href="htmls/source-archive.html" class="tool-card" data-name="source archive wayback citation url source-archive.html">
           <div>
             <div class="tool-name">Source Archive</div>
             <div class="tool-path">htmls/source-archive.html</div>
           </div>
-          <p class="tool-desc">Package directory files into lightweight archive records.</p>
+          <p class="tool-desc">Submit web sources to the Internet Archive, fetch page metadata via CORS proxies, and generate formatted citation hyperlinks.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
         </a>
 
-        <a href="htmls/textnormalizer.html" class="tool-card" data-name="text normalizer textnormalizer.html">
+        <a href="htmls/textnormalizer.html" class="tool-card" data-name="text normalizer stripper plain text clipboard textnormalizer.html">
           <div>
             <div class="tool-name">Text Normalizer</div>
             <div class="tool-path">htmls/textnormalizer.html</div>
           </div>
-          <p class="tool-desc">Sanitize, normalize encodings, and format plain text input.</p>
+          <p class="tool-desc">Strip fonts, colors, and formatting from rich text clipboard input while preserving original line breaks and paragraph structure.</p>
           <div class="card-footer">
             <span class="btn-sm">Open Tool</span>
           </div>
@@ -301,7 +304,9 @@
 
       toolCards.forEach(card => {
         const nameData = card.getAttribute('data-name').toLowerCase();
-        if (nameData.includes(query)) {
+        const descText = card.querySelector('.tool-desc').textContent.toLowerCase();
+        
+        if (nameData.includes(query) || descText.includes(query)) {
           card.style.display = 'flex';
           visible++;
         } else {
