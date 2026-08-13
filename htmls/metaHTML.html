@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metahtml</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: #000;
+      color: white;
+      font-family: Inter, system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.06), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.04), transparent 30%);
+      pointer-events: none;
+    }
+
+    .glass {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .dropzone.dragover {
+      border-color: white;
+      background: rgba(255,255,255,0.08);
+    }
+
+    textarea::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 999px;
+    }
+
+    .asset-card {
+      transition: 0.2s ease;
+    }
+
+    .asset-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.25);
+    }
+
+    .copy-success {
+      animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.04);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="min-h-screen px-6 py-10">
+
+    <div class="max-w-7xl mx-auto">
+
+      <!-- Header -->
+
+      <div class="mb-10">
+
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center text-xl font-black">
+            M
+          </div>
+
+          <div>
+            <h1 class="text-5xl font-black tracking-tight">
+              metahtml
+            </h1>
+
+            <p class="text-white/50 mt-1">
+              Generate every favicon, PWA icon, maskable icon, and HTML meta snippet from a single SVG.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Main -->
+
+      <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-8">
+
+        <!-- Left -->
+
+        <div class="space-y-6">
+
+          <!-- Upload -->
+
+          <div
+            id="dropzone"
+            class="dropzone glass rounded-3xl p-10 border-2 border-dashed border-white/10 transition-all duration-200 cursor-pointer"
+          >
+
+            <input
+              type="file"
+              id="svgInput"
+              accept=".svg,image/svg+xml"
+              hidden
+            />
+
+            <div class="text-center">
+
+              <div class="text-6xl mb-4">
+                ⬆
+              </div>
+
+              <h2 class="text-2xl font-bold mb-2">
+                Drop your SVG here
+              </h2>
+
+              <p class="text-white/50 mb-6">
+                or click to browse
+              </p>
+
+              <button
+                class="px-5 py-3 rounded-2xl bg-white text-black font-semibold hover:scale-105 transition"
+              >
+                Select SVG
+              </button>
+
+            </div>
+
+          </div>
+
+          <!-- Preview -->
+
+          <div class="glass rounded-3xl p-6">
+
+            <div class="flex items-center justify-between mb-5">
+
+              <div>
+                <h3 class="text-2xl font-bold">
+                  Preview
+                </h3>
+
+                <p class="text-white/40 text-sm mt-1">
+                  Generated from your master SVG
+                </p>
+              </div>
+
+              <button
+                id="downloadAll"
+                disabled
+                class="disabled:opacity-40 px-5 py-3 rounded-2xl border border-white/15 hover:bg-white hover:text-black transition"
+              >
+                Download ZIP
+              </button>
+
+            </div>
+
+            <div
+              id="previewGrid"
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+            >
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Right -->
+
+        <div class="space-y-6">
+
+          <!-- Generated Assets -->
+
+          <div class="glass rounded-3xl p-6">
+
+            <h3 class="text-2xl font-bold mb-1">
+              Generated Assets
+            </h3>
+
+            <p class="text-white/40 text-sm mb-6">
+              Everything modern browsers expect
+            </p>
+
+            <div id="assetList" class="space-y-3"></div>
+
+          </div>
+
+          <!-- Snippet -->
+
+          <div class="glass rounded-3xl p-6">
+
+            <div class="flex items-center justify-between mb-4">
+
+              <div>
+                <h3 class="text-2xl font-bold">
+                  HTML Snippet
+                </h3>
+
+                <p class="text-white/40 text-sm">
+                  Paste inside &lt;head&gt;
+                </p>
+              </div>
+
+              <button
+                id="copyBtn"
+                disabled
+                class="disabled:opacity-40 px-4 py-2 rounded-xl bg-white text-black font-semibold"
+              >
+                Copy
+              </button>
+
+            </div>
+
+            <textarea
+              id="snippet"
+              class="w-full h-[340px] bg-black border border-white/10 rounded-2xl p-4 text-sm outline-none resize-none"
+              readonly
+            ></textarea>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+
+    const ICONS = [
+      { name: "favicon-16x16.png", size: 16 },
+      { name: "favicon-32x32.png", size: 32 },
+      { name: "favicon-48x48.png", size: 48 },
+      { name: "favicon-96x96.png", size: 96 },
+
+      { name: "apple-touch-icon.png", size: 180 },
+
+      { name: "android-chrome-192x192.png", size: 192 },
+      { name: "android-chrome-512x512.png", size: 512 },
+
+      { name: "maskable-icon-192.png", size: 192, maskable: true },
+      { name: "maskable-icon-512.png", size: 512, maskable: true }
+    ];
+
+    const dropzone = document.getElementById("dropzone");
+    const svgInput = document.getElementById("svgInput");
+    const previewGrid = document.getElementById("previewGrid");
+    const assetList = document.getElementById("assetList");
+    const snippet = document.getElementById("snippet");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadAll = document.getElementById("downloadAll");
+
+    let generatedFiles = [];
+
+    dropzone.addEventListener("click", () => svgInput.click());
+
+    dropzone.addEventListener("dragover", e => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+
+      const file = e.dataTransfer.files[0];
+
+      if (file) {
+        handleSVG(file);
+      }
+    });
+
+    svgInput.addEventListener("change", e => {
+      if (e.target.files[0]) {
+        handleSVG(e.target.files[0]);
+      }
+    });
+
+    async function handleSVG(file) {
+
+      const svgText = await file.text();
+
+      generatedFiles = [];
+
+      previewGrid.innerHTML = "";
+      assetList.innerHTML = "";
+
+      for (const icon of ICONS) {
+
+        const blob = await svgToPng(svgText, icon.size, icon.maskable);
+
+        generatedFiles.push({
+          name: icon.name,
+          blob
+        });
+
+        renderPreview(icon, blob);
+        renderAsset(icon);
+
+      }
+
+      generateManifest();
+      generateSnippet();
+
+      copyBtn.disabled = false;
+      downloadAll.disabled = false;
+
+    }
+
+    function renderAsset(icon) {
+
+      const div = document.createElement("div");
+
+      div.className =
+        "asset-card border border-white/10 rounded-2xl p-4 flex items-center justify-between";
+
+      div.innerHTML = `
+        <div>
+          <div class="font-semibold">${icon.name}</div>
+          <div class="text-sm text-white/40">${icon.size}×${icon.size}</div>
+        </div>
+
+        <div class="text-white/30 text-sm">
+          ${icon.maskable ? "maskable" : "icon"}
+        </div>
+      `;
+
+      assetList.appendChild(div);
+
+    }
+
+    function renderPreview(icon, blob) {
+
+      const url = URL.createObjectURL(blob);
+
+      const div = document.createElement("div");
+
+      div.className =
+        "glass rounded-2xl p-4 flex flex-col items-center gap-3";
+
+      div.innerHTML = `
+        <div class="w-16 h-16 flex items-center justify-center bg-black rounded-2xl border border-white/10">
+          <img src="${url}" class="max-w-full max-h-full" />
+        </div>
+
+        <div class="text-center">
+          <div class="font-semibold text-sm">
+            ${icon.size}×${icon.size}
+          </div>
+
+          <div class="text-white/40 text-xs">
+            ${icon.name}
+          </div>
+        </div>
+      `;
+
+      previewGrid.appendChild(div);
+
+    }
+
+    async function svgToPng(svgText, size, maskable = false) {
+
+      return new Promise(resolve => {
+
+        const img = new Image();
+
+        const svgBlob = new Blob([svgText], {
+          type: "image/svg+xml"
+        });
+
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = () => {
+
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+
+          const ctx = canvas.getContext("2d");
+
+          if (maskable) {
+
+            const padding = size * 0.15;
+
+            ctx.drawImage(
+              img,
+              padding,
+              padding,
+              size - padding * 2,
+              size - padding * 2
+            );
+
+          } else {
+
+            ctx.drawImage(img, 0, 0, size, size);
+
+          }
+
+          canvas.toBlob(blob => {
+
+            resolve(blob);
+
+          }, "image/png");
+
+        };
+
+        img.src = url;
+
+      });
+
+    }
+
+    function generateManifest() {
+
+      const manifest = {
+        name: "metahtml app",
+        short_name: "metahtml",
+        theme_color: "#000000",
+        background_color: "#000000",
+        display: "standalone",
+        icons: [
+          {
+            src: "/assets/android-chrome-192x192.png",
+            sizes: "192x192",
+            type: "image/png"
+          },
+          {
+            src: "/assets/android-chrome-512x512.png",
+            sizes: "512x512",
+            type: "image/png"
+          },
+          {
+            src: "/assets/maskable-icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+          }
+        ]
+      };
+
+      generatedFiles.push({
+        name: "site.webmanifest",
+        blob: new Blob(
+          [JSON.stringify(manifest, null, 2)],
+          { type: "application/json" }
+        )
+      });
+
+    }
+
+    function generateSnippet() {
+
+      snippet.value =
+`<!-- favicons -->
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48x48.png">
+
+<!-- apple -->
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+
+<!-- pwa -->
+<link rel="manifest" href="/assets/site.webmanifest">
+
+<!-- android -->
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/android-chrome-512x512.png">
+
+<!-- theme -->
+<meta name="theme-color" content="#000000">`;
+
+    }
+
+    copyBtn.addEventListener("click", async () => {
+
+      await navigator.clipboard.writeText(snippet.value);
+
+      copyBtn.textContent = "Copied";
+
+      copyBtn.classList.add("copy-success");
+
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+        copyBtn.classList.remove("copy-success");
+      }, 1400);
+
+    });
+
+    downloadAll.addEventListener("click", async () => {
+
+      const zip = new JSZip();
+
+      for (const file of generatedFiles) {
+        zip.file(file.name, file.blob);
+      }
+
+      const content = await zip.generateAsync({
+        type: "blob"
+      });
+
+      const a = document.createElement("a");
+
+      a.href = URL.createObjectURL(content);
+      a.download = "metahtml-assets.zip";
+
+      a.click();
+
+    });
+
+  </script>
+
+</body>
+</html>

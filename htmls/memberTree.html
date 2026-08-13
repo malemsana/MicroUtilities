@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Hierarchy Explorer</title>
+    
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React, ReactDOM, and Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <style>
+        /* Base styles and fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            overflow: hidden;
+        }
+
+        /* SVG Canvas Overlay */
+        #svg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Hide scrollbar for clean canvas */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Smooth transitions */
+        .node-card {
+            transition: all 0.2s ease;
+        }
+        
+        /* Modal Animation */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-overlay { animation: fadeIn 0.2s ease-out forwards; }
+        .modal-content { animation: slideUp 0.3s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useLayoutEffect } = React;
+
+        const DEFAULT_STATE = {
+            "p1": { id: "p1", parentId: null, children: ["p2", "p3"], name: "Rajen" },
+            "p2": { id: "p2", parentId: "p1", children: ["p4", "p5"], name: "Milan" },
+            "p3": { id: "p3", parentId: "p1", children: [], name: "Sana" },
+            "p4": { id: "p4", parentId: "p2", children: [], name: "Aarav" },
+            "p5": { id: "p5", parentId: "p2", children: [], name: "Neha" }
+        };
+
+        // Reusable SVG Icons
+        const Icons = {
+            User: () => (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            ),
+            Plus: () => (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            ),
+            Search: () => (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            ),
+            Table: () => (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+            ),
+            ArrowLeft: () => (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            ),
+            More: () => (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
+                </svg>
+            )
+        };
+
+        function App() {
+            // App State
+            const [nodes, setNodes] = useState(() => {
+                const saved = localStorage.getItem('hierarchyAppV2');
+                return saved ? JSON.parse(saved) : DEFAULT_STATE;
+            });
+            const [focusId, setFocusId] = useState("p1");
+            const [viewMode, setViewMode] = useState('tree'); // 'tree' | 'table'
+            const [viewDepth, setViewDepth] = useState(3);
+            const [searchQuery, setSearchQuery] = useState("");
+
+            // Modals & Menus State
+            const [contextMenu, setContextMenu] = useState(null);
+            const [addModal, setAddModal] = useState({ isOpen: false, parentId: null });
+            const [deleteModal, setDeleteModal] = useState({ isOpen: false, nodeId: null });
+
+            const canvasRef = useRef(null);
+            const svgRef = useRef(null);
+
+            // Save to local storage on change
+            useEffect(() => {
+                localStorage.setItem('hierarchyAppV2', JSON.stringify(nodes));
+            }, [nodes]);
+
+            // Re-draw lines when nodes, focus, or window size changes
+            useEffect(() => {
+                if (viewMode !== 'tree') return;
+                
+                const drawLines = () => {
+                    if (!svgRef.current || !canvasRef.current) return;
+                    
+                    const svg = svgRef.current;
+                    const canvasRect = canvasRef.current.getBoundingClientRect();
+                    svg.innerHTML = ''; // Clear existing paths
+
+                    const parentElements = document.querySelectorAll('.node-parent');
+
+                    parentElements.forEach(parentEl => {
+                        const parentId = parentEl.dataset.id;
+                        const childElements = document.querySelectorAll(`.node-child[data-parent="${parentId}"]`);
+                        
+                        if (childElements.length === 0) return;
+
+                        const pRect = parentEl.getBoundingClientRect();
+                        const startX = (pRect.left + pRect.width / 2) - canvasRect.left;
+                        const startY = pRect.bottom - canvasRect.top;
+                        const dropHeight = 24;
+
+                        let pathData = `M ${startX} ${startY} V ${startY + dropHeight} `;
+
+                        let minX = Infinity, maxX = -Infinity;
+                        const childCoords = [];
+
+                        childElements.forEach(cEl => {
+                            const cRect = cEl.getBoundingClientRect();
+                            const cx = (cRect.left + cRect.width / 2) - canvasRect.left;
+                            const cy = cRect.top - canvasRect.top;
+                            
+                            if (cx < minX) minX = cx;
+                            if (cx > maxX) maxX = cx;
+                            childCoords.push({ cx, cy });
+                        });
+
+                        // Horizontal bridge
+                        if (childElements.length > 1 || childCoords[0].cx !== startX) {
+                            pathData += `M ${minX} ${startY + dropHeight} H ${maxX} `;
+                        }
+
+                        // Vertical drops
+                        childCoords.forEach(coords => {
+                            pathData += `M ${coords.cx} ${startY + dropHeight} V ${coords.cy} `;
+                        });
+
+                        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        pathEl.setAttribute('d', pathData);
+                        pathEl.setAttribute('stroke', '#cbd5e1'); // slate-300
+                        pathEl.setAttribute('stroke-width', '1.5');
+                        pathEl.setAttribute('fill', 'none');
+                        
+                        svg.appendChild(pathEl);
+                    });
+                };
+
+                // Use a short timeout to ensure DOM is fully painted before measuring
+                const timeoutId = setTimeout(drawLines, 50);
+                window.addEventListener('resize', drawLines);
+                
+                return () => {
+                    clearTimeout(timeoutId);
+                    window.removeEventListener('resize', drawLines);
+                };
+            }, [nodes, focusId, viewDepth, viewMode]);
+
+            const handleFocus = (id) => {
+                setFocusId(id);
+                setViewMode('tree');
+                setContextMenu(null);
+            };
+
+            const navigateUp = () => {
+                if (nodes[focusId] && nodes[focusId].parentId) {
+                    handleFocus(nodes[focusId].parentId);
+                }
+            };
+
+            const handleRightClick = (e, id) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenu({ x: e.pageX, y: e.pageY, id });
+            };
+
+            const closeContextMenu = () => setContextMenu(null);
+
+            // Add Child Logic
+            const confirmAddChild = (name) => {
+                if (!name.trim()) return;
+                const newId = 'n_' + Date.now();
+                const parentId = addModal.parentId;
+
+                setNodes(prev => {
+                    const next = { ...prev };
+                    next[newId] = { id: newId, parentId, children: [], name };
+                    next[parentId] = { ...next[parentId], children: [...next[parentId].children, newId] };
+                    return next;
+                });
+                setAddModal({ isOpen: false, parentId: null });
+            };
+
+            // Delete Logic
+            const confirmDelete = () => {
+                const targetId = deleteModal.nodeId;
+                const node = nodes[targetId];
+                
+                setNodes(prev => {
+                    const next = { ...prev };
+                    
+                    // Remove from parent
+                    if (node.parentId && next[node.parentId]) {
+                        next[node.parentId] = {
+                            ...next[node.parentId],
+                            children: next[node.parentId].children.filter(id => id !== targetId)
+                        };
+                    }
+
+                    // Recursive delete function
+                    const removeNodeAndChildren = (id) => {
+                        const n = next[id];
+                        if (n) {
+                            n.children.forEach(childId => removeNodeAndChildren(childId));
+                            delete next[id];
+                        }
+                    };
+                    
+                    removeNodeAndChildren(targetId);
+                    return next;
+                });
+
+                // Safety check: if we deleted the focused node, focus its parent or root
+                if (focusId === targetId) {
+                    setFocusId(node.parentId || Object.keys(nodes)[0] || null);
+                }
+
+                setDeleteModal({ isOpen: false, nodeId: null });
+                setContextMenu(null);
+            };
+
+            const renderBranch = (nodeId, depth = 0) => {
+                const node = nodes[nodeId];
+                if (!node) return null;
+
+                const isRoot = depth === 0;
+                
+                return (
+                    <div key={nodeId} className="flex flex-col items-center mx-4">
+                        {/* THE NODE CARD */}
+                        <div 
+                            className={`node-card node-parent relative z-10 w-28 bg-white border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center cursor-pointer shadow-sm hover:border-blue-400 hover:shadow-md ${!isRoot ? 'node-child mt-10' : ''}`}
+                            data-id={nodeId}
+                            data-parent={node.parentId}
+                            onClick={() => handleFocus(nodeId)}
+                            onContextMenu={(e) => handleRightClick(e, nodeId)}
+                        >
+                            {/* PFP Box */}
+                            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 mb-2">
+                                <Icons.User />
+                            </div>
+                            <div className="text-sm font-semibold text-slate-800 text-center w-full truncate">
+                                {node.name}
+                            </div>
+                        </div>
+
+                        {/* CHILDREN ROW */}
+                        {(node.children.length > 0 || isRoot) && depth < viewDepth && (
+                            <div className="flex flex-row items-start justify-center relative">
+                                {node.children.map(childId => renderBranch(childId, depth + 1))}
+                                
+                                {/* ADD CHILD BUTTON (Only on direct children row) */}
+                                {isRoot && (
+                                    <div 
+                                        className="node-child flex flex-col items-center ml-4 mt-10 z-10" 
+                                        data-parent={nodeId} 
+                                        data-id={`add-${nodeId}`}
+                                    >
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setAddModal({ isOpen: true, parentId: nodeId }); }}
+                                            className="w-[112px] h-[106px] rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 hover:border-blue-400 hover:bg-blue-50 transition-colors bg-white/50"
+                                            title="Add Child"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-1">
+                                                <Icons.Plus />
+                                            </div>
+                                            <span className="text-xs font-medium">Add</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex flex-col h-screen w-screen" onClick={closeContextMenu}>
+                    
+                    {/* NAVBAR */}
+                    <header className="flex justify-between items-center bg-white border-b border-slate-200 px-6 py-3 shrink-0 z-20 shadow-sm">
+                        <div className="flex items-center gap-2 text-slate-800 font-bold text-lg tracking-tight">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                                <Icons.More />
+                            </div>
+                            Hierarchy
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => { setViewMode('table'); setTimeout(() => { const el = document.getElementById('search-input'); if (el) el.focus(); }, 50); }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                            >
+                                <Icons.Search /> Directory
+                            </button>
+                            <div className="w-px h-5 bg-slate-200 mx-2"></div>
+                            <select 
+                                value={viewDepth} 
+                                onChange={(e) => setViewDepth(Number(e.target.value))}
+                                className="bg-transparent border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 outline-none hover:border-slate-300 cursor-pointer"
+                            >
+                                <option value={3}>3 Generations</option>
+                                <option value={5}>5 Generations</option>
+                                <option value={7}>7 Generations</option>
+                            </select>
+                        </div>
+                    </header>
+
+                    {/* MAIN WORKSPACE */}
+                    <main className="flex-1 relative overflow-hidden bg-slate-50 flex flex-col">
+                        
+                        {/* Tree View */}
+                        <div className={`flex-1 relative overflow-auto no-scrollbar p-10 flex flex-col items-center ${viewMode === 'tree' ? 'block' : 'hidden'}`} ref={canvasRef}>
+                            
+                            {/* Up Navigation */}
+                            <div className="w-full max-w-4xl flex justify-start mb-8 shrink-0">
+                                {nodes[focusId] && nodes[focusId].parentId && (
+                                    <button 
+                                        onClick={navigateUp}
+                                        className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        <Icons.ArrowLeft /> Back to {nodes[nodes[focusId].parentId].name}
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="relative flex flex-col items-center w-max min-w-full pb-32">
+                                <svg id="svg-canvas" ref={svgRef}></svg>
+                                {focusId && nodes[focusId] ? renderBranch(focusId, 0) : <div className="text-slate-400">Node not found.</div>}
+                            </div>
+                        </div>
+
+                        {/* Spreadsheet / Table View */}
+                        <div className={`flex-1 overflow-auto p-10 flex justify-center ${viewMode === 'table' ? 'block' : 'hidden'}`}>
+                            <div className="w-full max-w-3xl bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col h-max max-h-full">
+                                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-3">
+                                    <Icons.Search />
+                                    <input 
+                                        id="search-input"
+                                        type="text" 
+                                        placeholder="Search members..." 
+                                        className="w-full bg-transparent border-none outline-none text-slate-700"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <div className="overflow-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-6 py-3">Name</th>
+                                                <th className="px-6 py-3 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {Object.values(nodes)
+                                                .filter(n => n.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map(node => (
+                                                <tr key={node.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 font-medium text-slate-800 flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400"><Icons.User /></div>
+                                                        {node.name}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button 
+                                                            onClick={() => handleFocus(node.id)}
+                                                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-md font-medium transition-colors"
+                                                        >
+                                                            View in Tree
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </main>
+
+                    {/* CONTEXT MENU */}
+                    {contextMenu && (
+                        <div 
+                            className="fixed bg-white border border-slate-200 shadow-xl rounded-lg py-1 min-w-[160px] z-50 text-sm"
+                            style={{ top: contextMenu.y, left: contextMenu.x }}
+                        >
+                            <button 
+                                className="w-full text-left px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                onClick={() => handleFocus(contextMenu.id)}
+                            >
+                                <Icons.Search /> Focus Member
+                            </button>
+                            <div className="h-px bg-slate-100 my-1"></div>
+                            <button 
+                                className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                                onClick={() => { setDeleteModal({ isOpen: true, nodeId: contextMenu.id }); setContextMenu(null); }}
+                            >
+                                Delete Branch
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ADD CHILD MODAL */}
+                    {addModal.isOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm modal-overlay" onClick={() => setAddModal({ isOpen: false, parentId: null })}></div>
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative z-10 modal-content border border-slate-100">
+                                <h3 className="text-lg font-bold text-slate-800 mb-4">Add New Member</h3>
+                                <p className="text-sm text-slate-500 mb-4">Adding a child to {nodes[addModal.parentId] ? nodes[addModal.parentId].name : ''}.</p>
+                                
+                                <form onSubmit={(e) => { e.preventDefault(); confirmAddChild(e.target.name.value); }}>
+                                    <input 
+                                        name="name"
+                                        type="text" 
+                                        autoFocus
+                                        placeholder="Enter name" 
+                                        className="w-full border border-slate-300 rounded-lg px-4 py-2 mb-6 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                    />
+                                    <div className="flex justify-end gap-3">
+                                        <button type="button" onClick={() => setAddModal({ isOpen: false, parentId: null })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                                        <button type="submit" className="px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-sm">Add Member</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DELETE CONFIRM MODAL */}
+                    {deleteModal.isOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm modal-overlay" onClick={() => setDeleteModal({ isOpen: false, nodeId: null })}></div>
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative z-10 modal-content border border-slate-100">
+                                <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Branch?</h3>
+                                <p className="text-sm text-slate-500 mb-6">
+                                    Are you sure you want to delete <strong>{nodes[deleteModal.nodeId] ? nodes[deleteModal.nodeId].name : ''}</strong> and all of their descendants? This action cannot be undone.
+                                </p>
+                                
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setDeleteModal({ isOpen: false, nodeId: null })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                                    <button onClick={confirmDelete} className="px-4 py-2 text-sm font-medium bg-red-600 text-white hover:bg-red-700 rounded-lg shadow-sm">Delete Branch</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

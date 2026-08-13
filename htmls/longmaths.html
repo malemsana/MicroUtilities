@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LongMaths | Workbench Utility</title>
+    <style>
+        /* ==========================================================================
+           Workbench UI Design System Variables
+           ========================================================================== */
+        :root {
+            --bg-level-0: #0A0A0A;
+            --bg-level-1: #111111;
+            --bg-level-2: #1A1A1A;
+            --border-color: #444444;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-muted: #666666;
+            --accent: #4A90E2;
+            --accent-hover: #357ABD;
+            --error: #EF4444;
+
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-xxl: 48px;
+
+            --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+        }
+
+        /* ==========================================================================
+           Global Resets & Base Styles
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-level-0);
+            color: var(--text-primary);
+            font-family: var(--font-ui);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: var(--space-xxl) var(--space-md);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px; /* Constrained Workbench width */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==========================================================================
+           Typography
+           ========================================================================== */
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        p.description {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            margin-bottom: var(--space-lg);
+        }
+
+        /* ==========================================================================
+           Level 1: Input & Controls Container
+           ========================================================================== */
+        .controls-card {
+            background-color: var(--bg-level-1);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: var(--space-md) var(--space-lg);
+            display: flex;
+            gap: var(--space-md);
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-width: 250px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background-color: var(--bg-level-2);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 12px var(--space-md);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            transition: border-color 0.15s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           Buttons
+           ========================================================================== */
+        button {
+            cursor: pointer;
+            font-family: var(--font-ui);
+            border: none;
+            transition: all 0.1s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 8px;
+            padding: 12px 24px;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-small {
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+        }
+
+        .btn-small:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-level-1);
+            border-color: var(--border-color);
+        }
+
+        /* ==========================================================================
+           Level 2: Output Dominance Area
+           ========================================================================== */
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+        }
+
+        .output-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .output-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .output-container {
+            background-color: var(--bg-level-2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: var(--space-lg);
+            min-height: 300px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Custom Scrollbar for the output block */
+        .output-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .output-container::-webkit-scrollbar-track {
+            background: var(--bg-level-1);
+            border-radius: 4px;
+        }
+        .output-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        /* Info Badge for decimals operations */
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--bg-level-1);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            margin-bottom: var(--space-md);
+            width: 100%;
+        }
+
+        /* Native Grid Math Renderer Styles */
+        .math-board {
+            display: inline-flex;
+            flex-direction: column;
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            padding: var(--space-md);
+            user-select: text;
+        }
+
+        .math-row {
+            display: flex;
+        }
+
+        .math-cell {
+            width: 1.8rem;
+            height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-right: 2px;
+        }
+
+        .math-cell.b-top {
+            border-top: 2px solid var(--text-primary);
+        }
+
+        .math-cell.b-bottom {
+            border-bottom: 2px solid var(--text-primary);
+        }
+
+        /* Responsive & visual rendering of decimal dots on graph-paper pattern */
+        .math-cell.has-decimal::after {
+            content: ".";
+            position: absolute;
+            bottom: 0.25rem;
+            right: -0.15rem;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .math-cell.remainder-text {
+            width: auto;
+            justify-content: flex-start;
+            padding-left: 0.75rem;
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .metadata {
+            margin-top: var(--space-sm);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+            min-height: 1.2rem;
+        }
+
+        .error-text {
+            color: var(--error);
+            font-family: var(--font-ui);
+            font-size: 0.95rem;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-family: var(--font-ui);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 250px;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>LongMaths</h1>
+            <p class="description">Step-by-step arithmetic grid rendering.</p>
+        </header>
+
+        <!-- Level 1: Controls -->
+        <section class="controls-card">
+            <div class="input-group">
+                <input type="text" id="expression" placeholder="e.g. 14.25 / 1.2 or 1.25 * 2.3" autocomplete="off" spellcheck="false" autofocus>
+            </div>
+            <button class="btn-primary" onclick="processMath()">Generate</button>
+        </section>
+
+        <!-- Level 2: Output -->
+        <section class="output-section">
+            <div class="output-header">
+                <div class="output-title">Result</div>
+                <div class="output-actions">
+                    <button class="btn-small" onclick="copyResult()" id="copyBtn">Copy</button>
+                    <button class="btn-small" onclick="clearResult()">Clear</button>
+                </div>
+            </div>
+            
+            <div id="infoBadgeContainer"></div>
+
+            <div class="output-container" id="outputContainer">
+                <div class="empty-state">Awaiting input...</div>
+            </div>
+            <div class="metadata" id="executionMeta"></div>
+        </section>
+    </div>
+
+    <script>
+        // ==========================================================================
+        // Event Listeners & State Management
+        // ==========================================================================
+        document.getElementById('expression').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processMath();
+            }
+        });
+
+        function clearResult() {
+            document.getElementById('expression').value = '';
+            document.getElementById('outputContainer').innerHTML = '<div class="empty-state">Awaiting input...</div>';
+            document.getElementById('outputContainer').removeAttribute('data-text-fallback');
+            document.getElementById('infoBadgeContainer').innerHTML = '';
+            document.getElementById('executionMeta').innerText = '';
+            document.getElementById('expression').focus();
+        }
+
+        function copyResult() {
+            const container = document.getElementById('outputContainer');
+            const outputText = container.getAttribute('data-text-fallback') || container.innerText;
+            if (outputText.includes("Awaiting input") || outputText.trim() === "") return;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = outputText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerText = 'Copied';
+                setTimeout(() => copyBtn.innerText = 'Copy', 1500);
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // ==========================================================================
+        // Core Logic Pipeline
+        // ==========================================================================
+        function processMath() {
+            const startTime = performance.now();
+            const input = document.getElementById('expression').value.trim();
+            const container = document.getElementById('outputContainer');
+            const badgeContainer = document.getElementById('infoBadgeContainer');
+            const meta = document.getElementById('executionMeta');
+            
+            if (!input) return;
+
+            // Updated regex to support both integer and decimal values
+            const match = input.match(/^(\d+(?:\.\d+)?)\s*([\/\*xX÷])\s*(\d+(?:\.\d+)?)$/);
+
+            if (!match) {
+                renderError("Unrecognized format. Please use 'number / number' or 'number * number'.");
+                badgeContainer.innerHTML = '';
+                meta.innerText = "";
+                return;
+            }
+
+            const num1 = match[1];
+            const op = match[2].toLowerCase();
+            const num2 = match[3];
+
+            let resultHTML = "";
+            let resultText = "";
+            let infoMessage = "";
+
+            try {
+                if (op === '/' || op === '÷') {
+                    if (parseFloat(num2) === 0) {
+                        renderError("Error: Division by zero is undefined.");
+                        badgeContainer.innerHTML = '';
+                        return;
+                    }
+                    
+                    // Division setup details
+                    const divisionResult = generateDivisionNative(num1, num2);
+                    resultHTML = divisionResult.html;
+                    resultText = divisionResult.text;
+                    infoMessage = divisionResult.info;
+                } else if (op === '*' || op === 'x') {
+                    const multiplicationResult = generateMultiplicationNative(num1, num2);
+                    resultHTML = multiplicationResult.html;
+                    resultText = multiplicationResult.text;
+                }
+
+                // Render success
+                container.innerHTML = resultHTML;
+                container.setAttribute('data-text-fallback', resultText);
+                
+                // Set info badge if helpful operational details exist
+                if (infoMessage) {
+                    badgeContainer.innerHTML = `<div class="info-badge">${infoMessage}</div>`;
+                } else {
+                    badgeContainer.innerHTML = '';
+                }
+                
+                const endTime = performance.now();
+                const execTime = (endTime - startTime).toFixed(3);
+                meta.innerText = `Executed locally in ${execTime}ms.`;
+
+            } catch (error) {
+                renderError("An error occurred during calculation. Input may be formatted incorrectly.");
+                badgeContainer.innerHTML = '';
+                console.error(error);
+            }
+        }
+
+        function renderError(message) {
+            const container = document.getElementById('outputContainer');
+            container.innerHTML = `<div class="error-text">${message}</div>`;
+            container.removeAttribute('data-text-fallback');
+        }
+
+        // ==========================================================================
+        // Step Extractors & Native DOM Renderers
+        // ==========================================================================
+        
+        class MathRenderer {
+            constructor() {
+                this.grid = [];
+                this.maxCol = 0;
+            }
+
+            setCell(r, c, char, classes = []) {
+                while (this.grid.length <= r) this.grid.push([]);
+                while (this.grid[r].length <= c) this.grid[r].push({ char: '', classes: new Set() });
+                this.grid[r][c].char = char;
+                classes.forEach(cls => this.grid[r][c].classes.add(cls));
+                if (c > this.maxCol) this.maxCol = c;
+            }
+
+            addString(r, startC, str) {
+                for (let i = 0; i < str.length; i++) {
+                    this.setCell(r, startC + i, str[i]);
+                }
+            }
+
+            addStringRightAligned(r, endC, str) {
+                let startC = endC - str.length + 1;
+                this.addString(r, startC, str);
+            }
+
+            setDecimal(r, c) {
+                this.getCell(r, c).classes.add('has-decimal');
+            }
+
+            addTopBorder(r, startC, endC) {
+                for (let c = startC; c <= endC; c++) {
+                    this.setCell(r, c, this.getCell(r, c).char, ['b-top']);
+                }
+            }
+
+            addBottomBorder(r, startC, endC) {
+                for (let c = startC; c <= endC; c++) {
+                    this.setCell(r, c, this.getCell(r, c).char, ['b-bottom']);
+                }
+            }
+
+            getCell(r, c) {
+                while (this.grid.length <= r) this.grid.push([]);
+                while (this.grid[r].length <= c) this.grid[r].push({ char: '', classes: new Set() });
+                return this.grid[r][c];
+            }
+
+            toHTML() {
+                let html = '<div class="math-board">';
+                for (let r = 0; r < this.grid.length; r++) {
+                    html += '<div class="math-row">';
+                    let rowLen = this.grid[r] ? this.grid[r].length : 0;
+                    let colsToRender = Math.max(rowLen, this.maxCol + 1);
+                    
+                    for (let c = 0; c < colsToRender; c++) {
+                        let cell = this.grid[r] && this.grid[r][c] ? this.grid[r][c] : { char: '', classes: new Set() };
+                        let clsStr = Array.from(cell.classes).join(' ');
+                        
+                        if (clsStr.includes('remainder-text')) {
+                             html += `<div class="math-cell ${clsStr}">${cell.char}</div>`;
+                        } else {
+                             let charToRender = cell.char === ' ' || cell.char === '' ? '&nbsp;' : cell.char;
+                             html += `<div class="math-cell ${clsStr}">${charToRender}</div>`;
+                        }
+                    }
+                    html += '</div>';
+                }
+                html += '</div>';
+                return html;
+            }
+
+            toASCII() {
+                let lines = [];
+                for (let r = 0; r < this.grid.length; r++) {
+                    let lineStr = "";
+                    let underLineStr = "";
+                    let hasUnderline = false;
+                    
+                    let rowLen = this.grid[r] ? this.grid[r].length : 0;
+                    let colsToRender = Math.max(rowLen, this.maxCol + 1);
+                    
+                    for (let c = 0; c < colsToRender; c++) {
+                        let cell = this.grid[r] && this.grid[r][c] ? this.grid[r][c] : { char: ' ', classes: new Set() };
+                        let displayChar = cell.char === '' || cell.char === ' ' ? ' ' : cell.char;
+                        
+                        if (cell.classes.has('remainder-text')) {
+                            lineStr += " " + displayChar;
+                            underLineStr += " " + " ".repeat(displayChar.length);
+                        } else {
+                            let charWithDec = displayChar;
+                            if (cell.classes.has('has-decimal')) {
+                                charWithDec += ".";
+                            } else {
+                                charWithDec += " ";
+                            }
+                            
+                            lineStr += charWithDec;
+                            
+                            if (cell.classes.has('b-bottom')) {
+                                hasUnderline = true;
+                                underLineStr += "-".repeat(charWithDec.length);
+                            } else {
+                                underLineStr += " ".repeat(charWithDec.length);
+                            }
+                        }
+                    }
+                    
+                    // For division, draw a vinculum line above the dividend row
+                    if (r === 1) {
+                        let vinculumStr = "";
+                        let hasVinculum = false;
+                        for (let c = 0; c < colsToRender; c++) {
+                            let cell = this.grid[r] && this.grid[r][c] ? this.grid[r][c] : { char: ' ', classes: new Set() };
+                            if (cell.classes.has('b-top')) {
+                                hasVinculum = true;
+                                vinculumStr += "--";
+                            } else {
+                                vinculumStr += "  ";
+                            }
+                        }
+                        if (hasVinculum) {
+                            lines.push(vinculumStr.trimEnd());
+                        }
+                    }
+                    
+                    lines.push(lineStr.trimEnd());
+                    
+                    if (hasUnderline) {
+                        lines.push(underLineStr.trimEnd());
+                    }
+                }
+                return lines.join('\n');
+            }
+        }
+
+        // ==========================================================================
+        // Decimals Multiplication Processor
+        // ==========================================================================
+        function generateMultiplicationNative(n1Str, n2Str) {
+            let d1Dec = n1Str.includes('.') ? n1Str.split('.')[1].length : 0;
+            let d2Dec = n2Str.includes('.') ? n2Str.split('.')[1].length : 0;
+            let totalDec = d1Dec + d2Dec;
+
+            // Strip decimal points to perform step-by-step math on whole integers
+            let rawN1 = n1Str.replace('.', '');
+            let rawN2 = n2Str.replace('.', '');
+
+            let b1 = BigInt(rawN1);
+            let b2 = BigInt(rawN2);
+            let totalVal = b1 * b2;
+            let totalStr = totalVal.toString();
+
+            let prods = [];
+            for (let i = rawN2.length - 1; i >= 0; i--) {
+                let digit = BigInt(rawN2[i]);
+                let p = b1 * digit;
+                prods.push(p.toString());
+            }
+
+            let renderer = new MathRenderer();
+            
+            // Pad final product size if it's shorter than total decimal count
+            if (totalDec > 0 && totalStr.length <= totalDec) {
+                let padCount = totalDec - totalStr.length + 1;
+                totalStr = "0".repeat(padCount) + totalStr;
+            }
+
+            let maxDigitLength = Math.max(totalStr.length, rawN1.length, rawN2.length + 1);
+            let rightCol = maxDigitLength - 1;
+
+            // Render top factor
+            renderer.addStringRightAligned(0, rightCol, rawN1);
+            if (n1Str.includes('.')) {
+                let decIndexFromLeft = n1Str.indexOf('.');
+                let digitIndexInRaw = decIndexFromLeft - 1;
+                let gridCol = rightCol - (rawN1.length - 1 - digitIndexInRaw);
+                renderer.setDecimal(0, gridCol);
+            }
+
+            // Render multiplier factor
+            renderer.addStringRightAligned(1, rightCol, rawN2);
+            renderer.setCell(1, rightCol - rawN2.length, '×');
+            if (n2Str.includes('.')) {
+                let decIndexFromLeft = n2Str.indexOf('.');
+                let digitIndexInRaw = decIndexFromLeft - 1;
+                let gridCol = rightCol - (rawN2.length - 1 - digitIndexInRaw);
+                renderer.setDecimal(1, gridCol);
+            }
+
+            // Separator line
+            let startLineCol = rightCol - Math.max(rawN1.length, rawN2.length + 1) + 1;
+            renderer.addBottomBorder(1, startLineCol, rightCol);
+
+            let currRow = 2;
+            if (prods.length > 1) {
+                for (let i = 0; i < prods.length; i++) {
+                    renderer.addStringRightAligned(currRow, rightCol - i, prods[i]);
+                    currRow++;
+                }
+                renderer.addBottomBorder(currRow - 1, rightCol - totalStr.length + 1, rightCol);
+            }
+
+            // Final total value with aligned decimal point
+            renderer.addStringRightAligned(currRow, rightCol, totalStr);
+            if (totalDec > 0) {
+                let gridCol = rightCol - totalDec;
+                renderer.setDecimal(currRow, gridCol);
+            }
+
+            return {
+                html: renderer.toHTML(),
+                text: renderer.toASCII()
+            };
+        }
+
+        // ==========================================================================
+        // Decimals Division Processor
+        // ==========================================================================
+        function generateDivisionNative(dividendStr, divisorStr) {
+            // Determine divisor decimal properties
+            let divisorParts = divisorStr.split('.');
+            let divisorDecLen = divisorParts[1] ? divisorParts[1].length : 0;
+            
+            // Shift divisor to whole integer
+            let shiftedDivisorStr = divisorStr.replace('.', '');
+            shiftedDivisorStr = shiftedDivisorStr.replace(/^0+/, '') || '0';
+            let divisorVal = BigInt(shiftedDivisorStr);
+            
+            // Shift dividend by the same decimal offset
+            let dividendParts = dividendStr.split('.');
+            let dividendInt = dividendParts[0];
+            let dividendDec = dividendParts[1] || "";
+            
+            let shiftedDividendStr = "";
+            if (divisorDecLen > 0) {
+                if (dividendDec.length >= divisorDecLen) {
+                    shiftedDividendStr = dividendInt + dividendDec.slice(0, divisorDecLen) + 
+                                         (dividendDec.slice(divisorDecLen) ? "." + dividendDec.slice(divisorDecLen) : "");
+                } else {
+                    shiftedDividendStr = dividendInt + dividendDec + "0".repeat(divisorDecLen - dividendDec.length);
+                }
+            } else {
+                shiftedDividendStr = dividendStr;
+            }
+            
+            if (shiftedDividendStr.endsWith('.')) {
+                shiftedDividendStr = shiftedDividendStr.slice(0, -1);
+            }
+
+            let [sInt, sDec = ""] = shiftedDividendStr.split('.');
+            let digits = (sInt + sDec).split('');
+            let decimalPos = sInt.length - 1; // Mark of grid cell carrying the decimal point
+            let hasOriginalDecimal = shiftedDividendStr.includes('.');
+
+            let currentVal = "";
+            let quotientDigits = [];
+            let steps = [];
+            let rem = 0n;
+
+            let maxDecimals = 5;
+            let decimalsProduced = 0;
+            let i = 0;
+
+            // Divide step-by-step
+            while (i < digits.length || (rem > 0n && decimalsProduced < maxDecimals)) {
+                let nextDigit = "0";
+                if (i < digits.length) {
+                    nextDigit = digits[i];
+                } else {
+                    nextDigit = "0";
+                    if (!hasOriginalDecimal) {
+                        hasOriginalDecimal = true;
+                        decimalPos = i - 1;
+                    }
+                    decimalsProduced++;
+                }
+
+                currentVal += nextDigit;
+                let currentNum = BigInt(currentVal);
+                let qDigit = currentNum / divisorVal;
+                let prod = qDigit * divisorVal;
+                rem = currentNum - prod;
+
+                quotientDigits.push(qDigit.toString());
+
+                // Capture operational long-form steps after non-zero starting conditions
+                let isSignificant = quotientDigits.some(d => d !== "0") || i >= sInt.length - 1;
+
+                if (isSignificant) {
+                    steps.push({
+                        digitIndex: i,
+                        currentVal: currentVal,
+                        prod: prod.toString(),
+                        rem: rem.toString()
+                    });
+                }
+
+                currentVal = rem.toString();
+                if (currentVal === "0") currentVal = "";
+                i++;
+            }
+
+            // Fill empty grid cells of original dividend if quotient extended due to remaining fractions
+            let renderedDividendDigits = [...digits];
+            while (renderedDividendDigits.length < i) {
+                renderedDividendDigits.push("0");
+            }
+
+            let renderer = new MathRenderer();
+            let D = shiftedDivisorStr.length;
+
+            // Step 1: Place quotient rows
+            for (let k = 0; k < renderedDividendDigits.length; k++) {
+                let qDigit = quotientDigits[k] !== undefined ? quotientDigits[k] : " ";
+                renderer.setCell(0, D + 1 + k, qDigit);
+                if (hasOriginalDecimal && k === decimalPos) {
+                    renderer.setDecimal(0, D + 1 + k);
+                }
+            }
+
+            // Step 2: Place divisor & division bracket with dividend
+            renderer.addString(1, 0, shiftedDivisorStr);
+            renderer.setCell(1, D, ')');
+
+            for (let k = 0; k < renderedDividendDigits.length; k++) {
+                renderer.setCell(1, D + 1 + k, renderedDividendDigits[k]);
+                if (hasOriginalDecimal && k === decimalPos) {
+                    renderer.setDecimal(1, D + 1 + k);
+                }
+            }
+
+            // vinculum border
+            renderer.addTopBorder(1, D + 1, D + renderedDividendDigits.length);
+
+            let currRow = 2;
+
+            // Step 3: Draw out division subtractions
+            for (let stepIndex = 0; stepIndex < steps.length; stepIndex++) {
+                let step = steps[stepIndex];
+                let rightCol = D + 1 + step.digitIndex;
+
+                if (stepIndex > 0) {
+                    renderer.addStringRightAligned(currRow, rightCol, step.currentVal);
+                    currRow++;
+                }
+
+                renderer.addStringRightAligned(currRow, rightCol, step.prod);
+                renderer.setCell(currRow, rightCol - step.prod.length, '−');
+
+                let maxLen = Math.max(step.currentVal.length, step.prod.length);
+                renderer.addBottomBorder(currRow, rightCol - maxLen + 1, rightCol);
+
+                currRow++;
+            }
+
+            // Step 4: Render trailing remainder
+            let lastStep = steps[steps.length - 1];
+            let remRightCol = D + 1 + lastStep.digitIndex;
+            renderer.addStringRightAligned(currRow, remRightCol, lastStep.rem);
+            renderer.setCell(currRow, remRightCol + 1, '(Remainder)', ['remainder-text']);
+
+            // Generate informational message if divisor was shifted to a whole integer
+            let infoMsg = "";
+            if (divisorDecLen > 0) {
+                infoMsg = `Decimal shift applied: Divided as standard integer divisor: <strong>${shiftedDivisorStr}</strong> ) <strong>${shiftedDividendStr}</strong>`;
+            }
+
+            return {
+                html: renderer.toHTML(),
+                text: renderer.toASCII(),
+                info: infoMsg
+            };
+        }
+    </script>
+</body>
+</html>

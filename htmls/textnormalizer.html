@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure Text Normalizer</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary-color: #007aff;
+            --primary-hover: #0056b3;
+            --border-color: #cccccc;
+            --success-color: #34c759;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            text-align: center;
+            color: #111;
+        }
+
+        p {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* The ContentEditable div simulates a real paste environment 
+           where rich text (fonts, colors, links) is actually captured */
+        .input-box {
+            width: 100%;
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            line-height: 1.5;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #fafafa;
+        }
+
+        .input-box:focus {
+            border-color: var(--primary-color);
+            background: #fff;
+        }
+
+        /* Placeholder effect for contenteditable */
+        .input-box:empty:before {
+            content: attr(data-placeholder);
+            color: #aaa;
+            cursor: text;
+        }
+
+        .btn-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-copy {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-clear {
+            background-color: #e5e5ea;
+            color: #333;
+            max-width: 100px;
+        }
+
+        .btn-clear:hover {
+            background-color: #d1d1d6;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .toast {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--success-color);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Text Format Stripper</h1>
+    <p>Paste your rich text below. It will instantly convert to plain text while preserving your line breaks.</p>
+    
+    <div id="pasteArea" class="input-box" contenteditable="true" data-placeholder="Paste your formatted text here..."></div>
+    
+    <div class="btn-container">
+        <button class="btn-clear" id="clearBtn">Clear</button>
+        <button class="btn-copy" id="copyBtn">Copy Clean Text</button>
+    </div>
+
+    <div id="toast" class="toast">✓ Copied plain text to clipboard!</div>
+</div>
+
+<script>
+    const pasteArea = document.getElementById('pasteArea');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+
+    // intercept the paste event to force plain text but keep line breaks intact
+    pasteArea.addEventListener('paste', (e) => {
+        // Prevent the default paste behavior
+        e.preventDefault();
+
+        // Get plain text representation from clipboard (this natively strips fonts, colors, sizes, tables)
+        const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+
+        // Insert the plain text at the current cursor position
+        document.execCommand('insertText', false, text);
+    });
+
+    // Copy Action
+    copyBtn.addEventListener('click', () => {
+        // innerText naturally maps HTML line breaks (<br>, <div>, <p>) into standard \n line breaks
+        const cleanText = pasteArea.innerText;
+
+        if (!cleanText.trim()) {
+            alert('Please paste some text first!');
+            return;
+        }
+
+        navigator.clipboard.writeText(cleanText).then(() => {
+            // Show success toast
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
+    });
+
+    // Clear Action
+    clearBtn.addEventListener('click', () => {
+        pasteArea.innerHTML = '';
+        pasteArea.focus();
+    });
+</script>
+
+</body>
+</html>

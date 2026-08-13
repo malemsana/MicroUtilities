@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF to WebP Converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    :root {
+      --bg: #0A0A0A;
+      --surface-1: #111111;
+      --surface-2: #1A1A1A;
+      --border: #444444;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-muted: #666666;
+      --accent: #4A90E2;
+      --accent-hover: #357ABD;
+      --success: #22C55E;
+      --error: #EF4444;
+      --font-stack: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+
+    .workbench {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Header Section */
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .product-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .description {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* Common Card Panel */
+    .panel {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Material / Input Dropzone */
+    .dropzone {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.02);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: rgba(74, 144, 226, 0.04);
+    }
+    .dropzone input[type="file"] { display: none; }
+    .dropzone-text {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+    .file-info {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      background-color: var(--surface-2);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    /* Controls Bar */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      align-items: end;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    input[type="number"], select {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: var(--font-mono);
+      outline: none;
+    }
+
+    input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn {
+      background-color: #222222;
+      border: 1px solid var(--border);
+      color: #E0E0E0;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+    .btn:hover:not(:disabled) { background-color: #333333; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      font-weight: 600;
+      border: none;
+    }
+    .btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Output Section (Dominant) */
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-meta {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-container {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar-fill {
+      background-color: var(--accent);
+      height: 100%;
+      width: 0%;
+      transition: width 0.15s ease;
+    }
+
+    /* Grid for Rendered Objects */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .result-card {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.15s ease;
+    }
+    .result-card:hover { border-color: #666666; }
+
+    .image-preview-container {
+      background-color: var(--surface-2);
+      border: 1px solid #222222;
+      border-radius: 8px;
+      aspect-ratio: 1 / 1.414; /* Standard portrait ratio */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .image-preview-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-meta {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+    
+    .empty-state {
+      padding: 48px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background-color: var(--surface-2);
+      border-radius: 8px;
+      border: 1px solid #222222;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="workbench">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="product-title">PDF to WebP Converter</h1>
+      <p class="description">Extract PDF pages as high-resolution 300 DPI WebP images inside the browser.</p>
+    </header>
+
+    <!-- Material Input Panel -->
+    <section class="panel">
+      <h2 class="section-title">Input File</h2>
+      
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="pdfInput" accept="application/pdf" />
+        <span class="dropzone-text">Click or drag PDF file here</span>
+        <span class="file-info" id="fileInfo" style="display: none;"></span>
+      </div>
+
+      <div class="controls-grid">
+        <div class="control-group">
+          <label class="control-label" for="dpiInput">Resolution (DPI)</label>
+          <input type="number" id="dpiInput" value="300" min="72" max="600" step="1" />
+        </div>
+
+        <div class="control-group">
+          <label class="control-label" for="qualityInput">WebP Quality</label>
+          <select id="qualityInput">
+            <option value="0.92" selected>0.92 (High Quality)</option>
+            <option value="1.0">1.00 (Lossless / Max)</option>
+            <option value="0.75">0.75 (Balanced)</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="processBtn" disabled>
+          Extract Pages
+        </button>
+      </div>
+
+      <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+      <span class="status-text" id="statusText"></span>
+    </section>
+
+    <!-- Output Panel (Dominant Space) -->
+    <section class="panel" style="flex-grow: 1;">
+      <div class="output-header">
+        <h2 class="section-title">Extracted Images</h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span class="output-meta" id="outputSummary">0 pages extracted</span>
+          <button class="btn btn-sm" id="downloadZipBtn" disabled>
+            Download ZIP
+          </button>
+        </div>
+      </div>
+
+      <div id="resultsContainer">
+        <div class="empty-state">
+          No images extracted yet. Upload a PDF and click "Extract Pages".
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // PDF.js worker setup
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // UI Elements
+    const dropzone = document.getElementById('dropzone');
+    const pdfInput = document.getElementById('pdfInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const dpiInput = document.getElementById('dpiInput');
+    const qualityInput = document.getElementById('qualityInput');
+    const processBtn = document.getElementById('processBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const statusText = document.getElementById('statusText');
+    const outputSummary = document.getElementById('outputSummary');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    let selectedFile = null;
+    let extractedBlobs = [];
+
+    // Dropzone interaction
+    dropzone.addEventListener('click', () => pdfInput.click());
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        handleFileSelect(files[0]);
+      }
+    });
+
+    pdfInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      selectedFile = file;
+      fileInfo.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+      fileInfo.style.display = 'inline-block';
+      processBtn.disabled = false;
+      statusText.textContent = 'File loaded. Ready to process.';
+    }
+
+    // Process Action
+    processBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      // Lock UI
+      processBtn.disabled = true;
+      pdfInput.disabled = true;
+      downloadZipBtn.disabled = true;
+      extractedBlobs = [];
+      resultsContainer.innerHTML = '<div class="results-grid" id="resultsGrid"></div>';
+      const resultsGrid = document.getElementById('resultsGrid');
+
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      statusText.textContent = 'Parsing PDF structure...';
+
+      try {
+        const fileBuffer = await selectedFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
+        const totalPages = pdf.numPages;
+
+        const targetDPI = parseInt(dpiInput.value, 10) || 300;
+        const quality = parseFloat(qualityInput.value) || 0.92;
+        const scale = targetDPI / 72; // Standard PDF resolution base is 72 DPI
+
+        const baseName = selectedFile.name.replace(/\.[^/.]+$/, "");
+
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+          statusText.textContent = `Rendering page ${pageNum} of ${totalPages} at ${targetDPI} DPI...`;
+          
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: scale });
+
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+          // Export canvas frame to WebP Blob
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+          const filename = `${baseName}_page_${pageNum}.webp`;
+          const previewUrl = URL.createObjectURL(blob);
+
+          extractedBlobs.push({ filename, blob });
+
+          // Append Object Card to Results Grid
+          const cardHtml = `
+            <div class="result-card">
+              <div class="image-preview-container">
+                <img src="${previewUrl}" alt="Page ${pageNum}" />
+              </div>
+              <div class="card-footer">
+                <span class="card-meta">P. ${pageNum} • ${canvas.width}×${canvas.height}</span>
+                <a href="${previewUrl}" download="${filename}" class="btn btn-sm">Download</a>
+              </div>
+            </div>
+          `;
+          resultsGrid.insertAdjacentHTML('beforeend', cardHtml);
+
+          // Update Progress
+          const pct = Math.round((pageNum / totalPages) * 100);
+          progressBar.style.width = `${pct}%`;
+        }
+
+        statusText.textContent = `Completed extraction of ${totalPages} pages.`;
+        outputSummary.textContent = `${totalPages} pages extracted`;
+        downloadZipBtn.disabled = false;
+
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = `Error: ${err.message}`;
+      } finally {
+        processBtn.disabled = false;
+        pdfInput.disabled = false;
+      }
+    });
+
+    // ZIP Package Action
+    downloadZipBtn.addEventListener('click', async () => {
+      if (extractedBlobs.length === 0) return;
+
+      statusText.textContent = 'Generating ZIP archive...';
+      const zip = new JSZip();
+      const folder = zip.folder("extractedImages");
+
+      extractedBlobs.forEach(item => {
+        folder.file(item.filename, item.blob);
+      });
+
+      const zipContent = await zip.generateAsync({ type: 'blob' });
+      const downloadUrl = URL.createObjectURL(zipContent);
+
+      const baseName = selectedFile.name.replace(/\.[^/.]+$/, "");
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${baseName}_extractedImages.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+      statusText.textContent = 'ZIP archive downloaded.';
+    });
+  </script>
+</body>
+</html>

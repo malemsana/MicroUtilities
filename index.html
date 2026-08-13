@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MicroUtility Index</title>
+  <style>
+    :root {
+      --bg: #0A0A0A;
+      --surface-1: #111111;
+      --surface-2: #1A1A1A;
+      --border: #444444;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-muted: #666666;
+      --accent: #4A90E2;
+      --accent-hover: #357ABD;
+      --font-stack: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+
+    .workbench {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Header Section */
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .description {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* Panel & Controls */
+    .panel {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .meta-count {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .filter-input {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: var(--font-stack);
+      outline: none;
+      width: 100%;
+    }
+
+    .filter-input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Tool Grid */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .tool-card {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .tool-card:hover {
+      border-color: #666666;
+      background-color: var(--surface-2);
+    }
+
+    .tool-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .tool-path {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    .tool-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background-color: #222222;
+      border: 1px solid var(--border);
+      color: #E0E0E0;
+      font-weight: 500;
+      font-family: var(--font-stack);
+    }
+
+    .tool-card:hover .btn-sm {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="workbench">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="product-title">MicroUtility</h1>
+      <p class="description">Browser-native utility index and executable suite.</p>
+    </header>
+
+    <!-- Utility Index Panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="section-title">Available Tools</h2>
+        <span class="meta-count" id="toolCount">8 utilities registered</span>
+      </div>
+
+      <input 
+        type="text" 
+        id="filterInput" 
+        class="filter-input" 
+        placeholder="Filter tools by name or filename..." 
+        autocomplete="off"
+      />
+
+      <div class="tool-grid" id="toolGrid">
+        
+        <a href="htmls/code-combine.html" class="tool-card" data-name="code combine code-combine.html">
+          <div>
+            <div class="tool-name">Code Combine</div>
+            <div class="tool-path">htmls/code-combine.html</div>
+          </div>
+          <p class="tool-desc">Merge multiple source code files into a single unified record.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/longmaths.html" class="tool-card" data-name="long maths longmaths.html">
+          <div>
+            <div class="tool-name">Long Maths</div>
+            <div class="tool-path">htmls/longmaths.html</div>
+          </div>
+          <p class="tool-desc">Arbitrary-precision numerical calculations and expression evaluator.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/maniKeys.html" class="tool-card" data-name="mani keys maniKeys.html">
+          <div>
+            <div class="tool-name">Mani Keys</div>
+            <div class="tool-path">htmls/maniKeys.html</div>
+          </div>
+          <p class="tool-desc">Key-value object manipulator and transformation utility.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/memberTree.html" class="tool-card" data-name="member tree memberTree.html">
+          <div>
+            <div class="tool-name">Member Tree</div>
+            <div class="tool-path">htmls/memberTree.html</div>
+          </div>
+          <p class="tool-desc">Hierarchical data parser and tree structure viewer.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/metaHTML.html" class="tool-card" data-name="meta html metaHTML.html">
+          <div>
+            <div class="tool-name">Meta HTML</div>
+            <div class="tool-path">htmls/metaHTML.html</div>
+          </div>
+          <p class="tool-desc">Inspect, clean, and extract metadata structures from HTML markup.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/pdfToImages.html" class="tool-card" data-name="pdf to images pdfToImages.html">
+          <div>
+            <div class="tool-name">PDF to Images</div>
+            <div class="tool-path">htmls/pdfToImages.html</div>
+          </div>
+          <p class="tool-desc">Render PDF pages into 300 DPI WebP image files.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/source-archive.html" class="tool-card" data-name="source archive source-archive.html">
+          <div>
+            <div class="tool-name">Source Archive</div>
+            <div class="tool-path">htmls/source-archive.html</div>
+          </div>
+          <p class="tool-desc">Package directory files into lightweight archive records.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+        <a href="htmls/textnormalizer.html" class="tool-card" data-name="text normalizer textnormalizer.html">
+          <div>
+            <div class="tool-name">Text Normalizer</div>
+            <div class="tool-path">htmls/textnormalizer.html</div>
+          </div>
+          <p class="tool-desc">Sanitize, normalize encodings, and format plain text input.</p>
+          <div class="card-footer">
+            <span class="btn-sm">Open Tool</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const filterInput = document.getElementById('filterInput');
+    const toolCards = document.querySelectorAll('.tool-card');
+    const toolCount = document.getElementById('toolCount');
+
+    filterInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      let visible = 0;
+
+      toolCards.forEach(card => {
+        const nameData = card.getAttribute('data-name').toLowerCase();
+        if (nameData.includes(query)) {
+          card.style.display = 'flex';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      toolCount.textContent = `${visible} of ${toolCards.length} utilities shown`;
+    });
+  </script>
+</body>
+</html>
