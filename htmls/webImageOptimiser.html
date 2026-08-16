@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>WebImageOptimiser - Compressor | Free In-Browser Image Compression & Converter</title>
+  <meta name="description" content="WebImageOptimiser - Fast, private, in-browser image compressor and converter. Scale and compress WebP, JPEG, and PNG images locally without uploading files to any server.">
+  <meta name="keywords" content="image compressor, webp converter, web image optimizer, compress jpeg, shrink png, in-browser image optimization, image resizer, web image format converter, privacy image tool">
+  <meta name="author" content="WebImageOptimiser">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://malemsana.github.io/MicroUtilities/html/webImageOptimiser.html">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://malemsana.github.io/MicroUtilities/html/webImageOptimiser.html">
+  <meta property="og:title" content="WebImageOptimiser - Compressor | In-Browser Image Optimization">
+  <meta property="og:description" content="Convert, scale, and compress web images locally inside your browser with zero server uploads and instant side-by-side split previews.">
+  <meta property="og:image" content="https://malemsana.github.io/MicroUtilities/html/webImageOptimiser.htmlog-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://malemsana.github.io/MicroUtilities/html/webImageOptimiser.html">
+  <meta name="twitter:title" content="WebImageOptimiser - Compressor">
+  <meta name="twitter:description" content="Fast, private, in-browser image compressor and converter with instant split-screen comparison.">
+  <meta name="twitter:image" content="https://malemsana.github.io/MicroUtilities/html/webImageOptimiser.htmlog-image.png">
+
+  <!-- JSON-LD Structured Data for Web Application -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "WebImageOptimiser - Compressor",
+    "url": "https://webimageoptimiser.com",
+    "description": "A browser-native image compression utility to convert, scale, and optimize WebP, JPEG, and PNG images locally.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript and WebAssembly / Canvas capabilities.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <style>
+    /* Workbench UI Design System Variables */
+    :root {
+      --bg-app: #0A0A0A;
+      --surface-1: #111111;
+      --surface-2: #1A1A1A;
+      --border-color: #444444;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-muted: #666666;
+      --accent: #4A90E2;
+      --accent-hover: #357ABD;
+      --success: #22C55E;
+      --error: #EF4444;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      line-height: 1.5;
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .workbench-container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      background-color: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: rgba(74, 144, 226, 0.05);
+    }
+
+    .dropzone-compact {
+      padding: 12px 16px;
+      flex-direction: row;
+      justify-content: space-between;
+      border-style: solid;
+    }
+
+    .drop-icon {
+      width: 40px;
+      height: 40px;
+      stroke: var(--text-secondary);
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* Controls Bar */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+    }
+
+    optgroup {
+      background-color: var(--surface-1);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    .range-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 38px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .range-value {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      padding-top: 8px;
+    }
+
+    .checkbox-group input {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+
+    .custom-dim-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .custom-dim-box input {
+      width: 80px;
+      text-align: center;
+      font-family: var(--font-mono);
+    }
+
+    /* Presets Strip */
+    .presets-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Buttons */
+    .btn {
+      background-color: #222222;
+      border: 1px solid var(--border-color);
+      color: #E0E0E0;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.1s ease, transform 0.05s ease;
+    }
+
+    .btn:hover {
+      background-color: #333333;
+      color: #FFFFFF;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+      padding: 10px 20px;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+    }
+
+    /* Output Dominance Section */
+    .output-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .output-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /* Split Image Viewport */
+    .viewport-card {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+      min-height: 350px;
+      max-height: 550px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .comparison-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      max-height: 550px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: repeating-conic-gradient(#151515 0% 25%, #1d1d1d 0% 50%) 50% / 16px 16px;
+    }
+
+    .img-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .img-layer-compressed {
+      clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+    }
+
+    /* Splitter Handle */
+    .splitter-bar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background-color: var(--accent);
+      cursor: ew-resize;
+      z-index: 10;
+    }
+
+    .splitter-handle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 28px;
+      background-color: var(--surface-1);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .splitter-handle::before {
+      content: "↔";
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    /* Floating Labels */
+    .badge-label {
+      position: absolute;
+      top: 12px;
+      padding: 4px 8px;
+      background-color: rgba(17, 17, 17, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      z-index: 5;
+    }
+
+    .badge-original { left: 12px; }
+    .badge-compressed { right: 12px; }
+
+    /* Stats Panel */
+    .stats-bar {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-saving {
+      color: var(--success);
+    }
+
+    .stat-negative {
+      color: var(--error);
+    }
+
+    /* Action Toolbar */
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--surface-1);
+      border: 1px solid var(--accent);
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="workbench-container">
+    
+    <!-- HEADER -->
+    <header>
+      <h1>WebImageOptimiser - Compressor</h1>
+      <p class="subtitle">Convert, scale, and compress web images locally inside your browser with zero server uploads.</p>
+    </header>
+
+    <!-- MATERIAL INPUT / DROPZONE -->
+    <section>
+      <div id="dropzone" class="dropzone">
+        <svg class="drop-icon" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <div>
+          <strong style="color: var(--text-primary);">Drop image file here</strong> or <span style="color: var(--accent); text-decoration: underline;">select file</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Supports PNG, JPEG, WebP, GIF, SVG</p>
+        <button id="btn-sample" class="btn btn-sm" style="margin-top: 6px;">Load Demo Image</button>
+        <input type="file" id="file-input" class="file-input" accept="image/*">
+      </div>
+    </section>
+
+    <!-- WORKBENCH CONTROL PANEL -->
+    <section id="panel-controls" class="card hidden">
+      <div class="presets-bar">
+        <span style="font-size: 0.8rem; color: var(--text-muted); align-self: center; margin-right: 4px;">PRESETS:</span>
+        <button class="btn btn-sm" onclick="applyPreset('web-high')">Web High (WebP 80%)</button>
+        <button class="btn btn-sm" onclick="applyPreset('aggressive')">Aggressive (WebP 50%)</button>
+        <button class="btn btn-sm" onclick="applyPreset('jpg-legacy')">Legacy JPEG (75%)</button>
+        <button class="btn btn-sm" onclick="applyPreset('png-crisp')">Lossless PNG</button>
+      </div>
+
+      <div class="controls-grid">
+        <!-- Target Format -->
+        <div class="control-group">
+          <label for="select-format">Output Format</label>
+          <select id="select-format">
+            <option value="image/webp" selected>WebP (Web Standard)</option>
+            <option value="image/jpeg">JPEG (Photographic)</option>
+            <option value="image/png">PNG (Lossless/Graphics)</option>
+          </select>
+        </div>
+
+        <!-- Quality Slider -->
+        <div class="control-group" id="group-quality">
+          <label for="input-quality">Quality</label>
+          <div class="range-container">
+            <input type="range" id="input-quality" min="5" max="100" value="80">
+            <span id="label-quality" class="range-value">80%</span>
+          </div>
+        </div>
+
+        <!-- Resolution & Scale Selection -->
+        <div class="control-group">
+          <label for="select-scale">Resolution Bounds</label>
+          <select id="select-scale">
+            <optgroup label="Original & Relative Scale">
+              <option value="1" selected>Original Size (100%)</option>
+              <option value="0.90">90% Scale</option>
+              <option value="0.75">75% Scale</option>
+              <option value="0.50">50% Scale</option>
+              <option value="0.33">33% Scale</option>
+              <option value="0.25">25% Scale</option>
+              <option value="0.10">10% Thumbnail</option>
+            </optgroup>
+
+            <optgroup label="Desktop & Displays">
+              <option value="3840">Max 3840px (4K / UHD)</option>
+              <option value="2560">Max 2560px (1440p / QHD)</option>
+              <option value="2048">Max 2048px (2K)</option>
+              <option value="1920">Max 1920px (1080p Full HD)</option>
+              <option value="1600">Max 1600px (UXGA)</option>
+              <option value="1440">Max 1440px (WXGA+)</option>
+              <option value="1366">Max 1366px (Laptop)</option>
+              <option value="1280">Max 1280px (720p HD)</option>
+            </optgroup>
+
+            <optgroup label="Web & Mobile Assets">
+              <option value="1024">Max 1024px (Tablet Banner)</option>
+              <option value="960">Max 960px (Workbench Base)</option>
+              <option value="800">Max 800px (Blog / Card)</option>
+              <option value="640">Max 640px (Mobile Standard)</option>
+              <option value="480">Max 480px (Mobile Small)</option>
+              <option value="320">Max 320px (Mobile Micro)</option>
+              <option value="150">Max 150px (Avatar / Icon)</option>
+            </optgroup>
+
+            <optgroup label="Custom Input">
+              <option value="custom">Custom Dimensions...</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Custom Dimensions Controls (Hidden by default) -->
+        <div class="control-group hidden" id="group-custom-dim">
+          <label>Custom Size (px)</label>
+          <div class="custom-dim-box">
+            <input type="number" id="input-custom-w" placeholder="W" min="1" max="10000">
+            <span style="color:var(--text-muted);">×</span>
+            <input type="number" id="input-custom-h" placeholder="H" min="1" max="10000">
+          </div>
+          <label class="checkbox-group" style="padding-top: 4px;">
+            <input type="checkbox" id="chk-aspect-lock" checked>
+            <span>Lock Aspect Ratio</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- OUTPUT DOMINANCE PANEL -->
+    <section id="panel-output" class="output-section hidden">
+      <div class="output-header">
+        <h2 class="output-title">Optimization Preview</h2>
+        <span id="file-name-tag" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">filename.png</span>
+      </div>
+
+      <!-- Split Screen Interactive Canvas Container -->
+      <div class="viewport-card" id="viewport">
+        <div class="comparison-wrapper" id="comparison-wrapper">
+          <img id="img-original" class="img-layer" alt="Original Image">
+          <img id="img-compressed" class="img-layer img-layer-compressed" alt="Compressed Image">
+          
+          <div class="badge-label badge-original">ORIGINAL</div>
+          <div class="badge-label badge-compressed">OPTIMIZED</div>
+
+          <!-- Splitter Line & Handle -->
+          <div class="splitter-bar" id="splitter">
+            <div class="splitter-handle"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Metadata & Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Original Size</span>
+          <span id="stat-orig-size" class="stat-value">0 KB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Optimized Size</span>
+          <span id="stat-opt-size" class="stat-value">0 KB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Space Saved</span>
+          <span id="stat-reduction" class="stat-value stat-saving">0%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Dimensions</span>
+          <span id="stat-res" class="stat-value">0 × 0</span>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="action-row">
+        <button class="btn" id="btn-copy-uri">Copy Data URI</button>
+        <button class="btn" id="btn-copy-html">Copy &lt;picture&gt; Snippet</button>
+        <button class="btn btn-primary" id="btn-download">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download Optimized Image
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Hidden Working Canvas -->
+  <canvas id="work-canvas" class="hidden"></canvas>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    <span id="toast-text">Copied to clipboard</span>
+  </div>
+
+  <script>
+    // App State Management
+    let state = {
+      rawFile: null,
+      originalImg: new Image(),
+      originalSize: 0,
+      originalWidth: 0,
+      originalHeight: 0,
+      compressedBlob: null,
+      compressedUrl: null,
+      compressedSize: 0,
+      format: 'image/webp',
+      quality: 0.80,
+      scaleSetting: '1',
+      customW: 0,
+      customH: 0,
+      debounceTimer: null
+    };
+
+    // DOM References
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const btnSample = document.getElementById('btn-sample');
+    const panelControls = document.getElementById('panel-controls');
+    const panelOutput = document.getElementById('panel-output');
+    
+    const selectFormat = document.getElementById('select-format');
+    const inputQuality = document.getElementById('input-quality');
+    const labelQuality = document.getElementById('label-quality');
+    const groupQuality = document.getElementById('group-quality');
+    const selectScale = document.getElementById('select-scale');
+    const groupCustomDim = document.getElementById('group-custom-dim');
+    const inputCustomW = document.getElementById('input-custom-w');
+    const inputCustomH = document.getElementById('input-custom-h');
+    const chkAspectLock = document.getElementById('chk-aspect-lock');
+    
+    const fileNameTag = document.getElementById('file-name-tag');
+    const imgOriginal = document.getElementById('img-original');
+    const imgCompressed = document.getElementById('img-compressed');
+    const comparisonWrapper = document.getElementById('comparison-wrapper');
+    const splitter = document.getElementById('splitter');
+    
+    const statOrigSize = document.getElementById('stat-orig-size');
+    const statOptSize = document.getElementById('stat-opt-size');
+    const statReduction = document.getElementById('stat-reduction');
+    const statRes = document.getElementById('stat-res');
+
+    const btnDownload = document.getElementById('btn-download');
+    const btnCopyUri = document.getElementById('btn-copy-uri');
+    const btnCopyHtml = document.getElementById('btn-copy-html');
+    const workCanvas = document.getElementById('work-canvas');
+    const toast = document.getElementById('toast');
+
+    // Drag and Drop Logic
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFileSelection(files[0]);
+    });
+
+    dropzone.addEventListener('click', (e) => {
+      if (e.target !== btnSample) fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
+    });
+
+    btnSample.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadSampleImage();
+    });
+
+    // Control Inputs Listeners
+    selectFormat.addEventListener('change', () => {
+      state.format = selectFormat.value;
+      if (state.format === 'image/png') {
+        groupQuality.classList.add('hidden');
+      } else {
+        groupQuality.classList.remove('hidden');
+      }
+      triggerOptimization();
+    });
+
+    inputQuality.addEventListener('input', () => {
+      labelQuality.textContent = `${inputQuality.value}%`;
+      state.quality = parseFloat(inputQuality.value) / 100;
+      triggerOptimizationDebounced();
+    });
+
+    selectScale.addEventListener('change', () => {
+      state.scaleSetting = selectScale.value;
+      if (state.scaleSetting === 'custom') {
+        groupCustomDim.classList.remove('hidden');
+        if (!inputCustomW.value) inputCustomW.value = state.originalWidth;
+        if (!inputCustomH.value) inputCustomH.value = state.originalHeight;
+        state.customW = parseInt(inputCustomW.value) || state.originalWidth;
+        state.customH = parseInt(inputCustomH.value) || state.originalHeight;
+      } else {
+        groupCustomDim.classList.add('hidden');
+      }
+      triggerOptimization();
+    });
+
+    // Custom Resolution Inputs handling
+    inputCustomW.addEventListener('input', () => {
+      let valW = parseInt(inputCustomW.value) || 0;
+      if (chkAspectLock.checked && state.originalWidth > 0 && valW > 0) {
+        let ratio = state.originalHeight / state.originalWidth;
+        let calcH = Math.round(valW * ratio);
+        inputCustomH.value = calcH;
+        state.customH = calcH;
+      }
+      state.customW = valW;
+      triggerOptimizationDebounced();
+    });
+
+    inputCustomH.addEventListener('input', () => {
+      let valH = parseInt(inputCustomH.value) || 0;
+      if (chkAspectLock.checked && state.originalHeight > 0 && valH > 0) {
+        let ratio = state.originalWidth / state.originalHeight;
+        let calcW = Math.round(valH * ratio);
+        inputCustomW.value = calcW;
+        state.customW = calcW;
+      }
+      state.customH = valH;
+      triggerOptimizationDebounced();
+    });
+
+    // Presets Action
+    window.applyPreset = function(presetName) {
+      if (presetName === 'web-high') {
+        selectFormat.value = 'image/webp';
+        inputQuality.value = 80;
+        selectScale.value = '1';
+      } else if (presetName === 'aggressive') {
+        selectFormat.value = 'image/webp';
+        inputQuality.value = 50;
+        selectScale.value = '1';
+      } else if (presetName === 'jpg-legacy') {
+        selectFormat.value = 'image/jpeg';
+        inputQuality.value = 75;
+        selectScale.value = '1';
+      } else if (presetName === 'png-crisp') {
+        selectFormat.value = 'image/png';
+        selectScale.value = '1';
+      }
+      
+      selectScale.dispatchEvent(new Event('change'));
+      selectFormat.dispatchEvent(new Event('change'));
+      labelQuality.textContent = `${inputQuality.value}%`;
+      state.quality = parseFloat(inputQuality.value) / 100;
+    };
+
+    // File Selection Handler
+    function handleFileSelection(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file');
+        return;
+      }
+
+      state.rawFile = file;
+      state.originalSize = file.size;
+      fileNameTag.textContent = `${file.name} (${formatBytes(file.size)})`;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        state.originalImg = new Image();
+        state.originalImg.onload = () => {
+          state.originalWidth = state.originalImg.width;
+          state.originalHeight = state.originalImg.height;
+          inputCustomW.value = state.originalWidth;
+          inputCustomH.value = state.originalHeight;
+          imgOriginal.src = e.target.result;
+          
+          // Collapse Dropzone into compact strip
+          dropzone.classList.add('dropzone-compact');
+          dropzone.innerHTML = `
+            <div><strong>${file.name}</strong> <span style="color:var(--text-muted);">(${formatBytes(file.size)})</span></div>
+            <button class="btn btn-sm" onclick="location.reload()">Change File</button>
+          `;
+
+          panelControls.classList.remove('hidden');
+          panelOutput.classList.remove('hidden');
+
+          triggerOptimization();
+        };
+        state.originalImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Demo Image Generator
+    function loadSampleImage() {
+      const sampleCanvas = document.createElement('canvas');
+      sampleCanvas.width = 1600;
+      sampleCanvas.height = 1000;
+      const ctx = sampleCanvas.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 1600, 1000);
+      grad.addColorStop(0, '#1a365d');
+      grad.addColorStop(0.5, '#742a2a');
+      grad.addColorStop(1, '#1a202c');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1600, 1000);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 72px -apple-system, sans-serif';
+      ctx.fillText('WORKBENCH OPTIMIZER', 120, 480);
+      
+      ctx.fillStyle = '#4A90E2';
+      ctx.font = '36px -apple-system, sans-serif';
+      ctx.fillText('In-Browser Client Compression Demo', 120, 550);
+
+      for (let i = 0; i < 60; i++) {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${Math.random() * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * 1600, Math.random() * 1000, Math.random() * 150, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      sampleCanvas.toBlob((blob) => {
+        const sampleFile = new File([blob], "sample-workbench-hero.png", { type: "image/png" });
+        handleFileSelection(sampleFile);
+      }, 'image/png');
+    }
+
+    // Debounced optimization trigger
+    function triggerOptimizationDebounced() {
+      clearTimeout(state.debounceTimer);
+      state.debounceTimer = setTimeout(() => {
+        triggerOptimization();
+      }, 50);
+    }
+
+    // Canvas Compression Core
+    function triggerOptimization() {
+      if (!state.originalImg.src) return;
+
+      let targetW = state.originalWidth;
+      let targetH = state.originalHeight;
+
+      if (state.scaleSetting === 'custom') {
+        targetW = Math.max(1, state.customW || state.originalWidth);
+        targetH = Math.max(1, state.customH || state.originalHeight);
+      } else {
+        const scaleVal = parseFloat(state.scaleSetting);
+        if (scaleVal <= 1 && scaleVal > 0) {
+          targetW = Math.round(state.originalWidth * scaleVal);
+          targetH = Math.round(state.originalHeight * scaleVal);
+        } else if (scaleVal > 1) {
+          if (state.originalWidth > scaleVal || state.originalHeight > scaleVal) {
+            if (state.originalWidth >= state.originalHeight) {
+              targetW = scaleVal;
+              targetH = Math.round((state.originalHeight / state.originalWidth) * scaleVal);
+            } else {
+              targetH = scaleVal;
+              targetW = Math.round((state.originalWidth / state.originalHeight) * scaleVal);
+            }
+          }
+        }
+      }
+
+      workCanvas.width = targetW;
+      workCanvas.height = targetH;
+      const ctx = workCanvas.getContext('2d');
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      ctx.drawImage(state.originalImg, 0, 0, targetW, targetH);
+
+      workCanvas.toBlob((blob) => {
+        if (!blob) return;
+
+        if (state.compressedUrl) {
+          URL.revokeObjectURL(state.compressedUrl);
+        }
+
+        state.compressedBlob = blob;
+        state.compressedSize = blob.size;
+        state.compressedUrl = URL.createObjectURL(blob);
+
+        imgCompressed.src = state.compressedUrl;
+
+        // Stats updates
+        statOrigSize.textContent = formatBytes(state.originalSize);
+        statOptSize.textContent = formatBytes(state.compressedSize);
+        statRes.textContent = `${targetW} × ${targetH} px`;
+
+        const diffBytes = state.originalSize - state.compressedSize;
+        const percentSaved = ((diffBytes / state.originalSize) * 100).toFixed(1);
+
+        if (diffBytes >= 0) {
+          statReduction.textContent = `-${percentSaved}%`;
+          statReduction.className = 'stat-value stat-saving';
+        } else {
+          statReduction.textContent = `+${Math.abs(percentSaved)}%`;
+          statReduction.className = 'stat-value stat-negative';
+        }
+
+      }, state.format, state.quality);
+    }
+
+    // Split View Drag Handle
+    let isDraggingSplitter = false;
+
+    function updateSplitterPosition(clientX) {
+      const rect = comparisonWrapper.getBoundingClientRect();
+      let offsetX = clientX - rect.left;
+      if (offsetX < 0) offsetX = 0;
+      if (offsetX > rect.width) offsetX = rect.width;
+
+      const percentage = (offsetX / rect.width) * 100;
+      splitter.style.left = `${percentage}%`;
+      imgCompressed.style.clipPath = `polygon(${percentage}% 0, 100% 0, 100% 100%, ${percentage}% 100%)`;
+    }
+
+    splitter.addEventListener('mousedown', () => isDraggingSplitter = true);
+    window.addEventListener('mouseup', () => isDraggingSplitter = false);
+    window.addEventListener('mousemove', (e) => {
+      if (isDraggingSplitter) updateSplitterPosition(e.clientX);
+    });
+
+    splitter.addEventListener('touchstart', () => isDraggingSplitter = true);
+    window.addEventListener('touchend', () => isDraggingSplitter = false);
+    window.addEventListener('touchmove', (e) => {
+      if (isDraggingSplitter && e.touches.length > 0) {
+        updateSplitterPosition(e.touches[0].clientX);
+      }
+    });
+
+    // Output Actions
+    btnDownload.addEventListener('click', () => {
+      if (!state.compressedBlob) return;
+      
+      const extMap = { 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' };
+      const ext = extMap[state.format] || 'img';
+      const baseName = state.rawFile ? state.rawFile.name.replace(/\.[^/.]+$/, "") : "optimized";
+      
+      const downloadLink = document.createElement('a');
+      downloadLink.href = state.compressedUrl;
+      downloadLink.download = `${baseName}-opt.${ext}`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      showToast("Download started!");
+    });
+
+    btnCopyUri.addEventListener('click', () => {
+      if (!workCanvas) return;
+      const dataUri = workCanvas.toDataURL(state.format, state.quality);
+      copyToClipboard(dataUri, "Data URI copied to clipboard!");
+    });
+
+    btnCopyHtml.addEventListener('click', () => {
+      const extMap = { 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/png': 'png' };
+      const ext = extMap[state.format] || 'webp';
+      const baseName = state.rawFile ? state.rawFile.name.replace(/\.[^/.]+$/, "") : "image";
+      
+      const snippet = `<picture>\n  <source srcset="${baseName}.${ext}" type="${state.format}">\n  <img src="${baseName}-fallback.jpg" alt="${baseName}" width="${workCanvas.width}" height="${workCanvas.height}" loading="lazy">\n</picture>`;
+      
+      copyToClipboard(snippet, "<picture> HTML snippet copied!");
+    });
+
+    // Helper functions
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function copyToClipboard(text, successMessage) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMessage));
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast(successMessage);
+      }
+    }
+
+    function showToast(msg) {
+      const toastText = document.getElementById('toast-text');
+      toastText.textContent = msg;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+  </script>
+</body>
+</html>
