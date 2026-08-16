@@ -785,7 +785,8 @@
         state.rawArrayBuffer = e.target.result;
         
         try {
-          const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer) });
+          // Slice ArrayBuffer to prevent PDF.js Web Worker transfer from detaching state.rawArrayBuffer
+          const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer.slice(0)) });
           state.pdfDoc = await loadingTask.promise;
           state.totalPages = state.pdfDoc.numPages;
           state.currentPage = 1;
@@ -856,7 +857,7 @@
         if (state.mode === 'stream-clean') {
           // Lossless object stream compression & metadata stripping
           updateProgress(40, "Cleaning object streams & metadata...");
-          const pdfDoc = await PDFLib.PDFDocument.load(state.rawArrayBuffer);
+          const pdfDoc = await PDFLib.PDFDocument.load(state.rawArrayBuffer.slice(0));
           
           if (state.stripMeta) {
             pdfDoc.setTitle('');
@@ -871,7 +872,7 @@
           updateProgress(100, "Done!");
         } else {
           // Raster Re-encoding at Target DPI + JPEG Quantization
-          const srcPdf = await pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer) }).promise;
+          const srcPdf = await pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer.slice(0)) }).promise;
           const newPdfDoc = await PDFLib.PDFDocument.create();
 
           const scale = state.dpi / 72.0; // Standard PDF base points are 72 DPI
