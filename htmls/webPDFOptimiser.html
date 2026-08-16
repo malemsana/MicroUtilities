@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>WebPDFOptimiser - Compressor | Free In-Browser PDF Compression Tool</title>
+  <meta name="description" content="WebPDFOptimiser - Fast, private, in-browser PDF compressor. Reduce PDF file sizes, optimize image streams, adjust DPI resolution, and strip metadata locally without uploading files to any server.">
+  <meta name="keywords" content="pdf compressor, compress pdf online, browser pdf optimizer, shrink pdf size, local pdf compression, web pdf optimizer, privacy pdf tool, reduce pdf size">
+  <meta name="author" content="WebPDFOptimiser">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://webpdfoptimiser.com/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webpdfoptimiser.com/">
+  <meta property="og:title" content="WebPDFOptimiser - Compressor | In-Browser PDF Optimization">
+  <meta property="og:description" content="Compress and optimize PDF documents locally inside your browser with zero server uploads and high visual clarity.">
+  <meta property="og:image" content="https://webpdfoptimiser.com/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://webpdfoptimiser.com/">
+  <meta name="twitter:title" content="WebPDFOptimiser - Compressor">
+  <meta name="twitter:description" content="Fast, private, in-browser PDF compressor and stream optimizer with instant visual page comparison.">
+  <meta name="twitter:image" content="https://webpdfoptimiser.com/og-image.png">
+
+  <!-- JSON-LD Structured Data for Web Application -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "WebPDFOptimiser - Compressor",
+    "url": "https://webpdfoptimiser.com",
+    "description": "A browser-native PDF compression utility to shrink PDF payloads, tune embedded image DPI, strip EXIF metadata, and clean object streams locally.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "All",
+    "browserRequirements": "Requires JavaScript and HTML5 Canvas capabilities.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <!-- PDF Processing Client-Side Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+
+  <style>
+    :root {
+      --bg-app: #0A0A0A;
+      --surface-1: #111111;
+      --surface-2: #1A1A1A;
+      --border-color: #444444;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0A0;
+      --text-muted: #666666;
+      --accent: #4A90E2;
+      --accent-hover: #357ABD;
+      --success: #22C55E;
+      --error: #EF4444;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      line-height: 1.5;
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .workbench-container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 2px dashed var(--border-color);
+      background-color: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background-color: rgba(74, 144, 226, 0.05);
+    }
+
+    .dropzone-compact {
+      padding: 12px 16px;
+      flex-direction: row;
+      justify-content: space-between;
+      border-style: solid;
+    }
+
+    .drop-icon {
+      width: 40px;
+      height: 40px;
+      stroke: var(--text-secondary);
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* Presets Strip */
+    .presets-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Controls Bar */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      width: 100%;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    .range-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 38px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .range-value {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      padding-top: 4px;
+    }
+
+    .checkbox-group input {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Buttons */
+    .btn {
+      background-color: #222222;
+      border: 1px solid var(--border-color);
+      color: #E0E0E0;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.1s ease, transform 0.05s ease;
+    }
+
+    .btn:hover {
+      background-color: #333333;
+      color: #FFFFFF;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+      font-weight: 600;
+      padding: 10px 20px;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+    }
+
+    /* Output Section */
+    .output-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .output-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /* PDF Page Viewer Surface */
+    .viewport-card {
+      background-color: var(--surface-2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      user-select: none;
+      min-height: 400px;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: repeating-conic-gradient(#151515 0% 25%, #1d1d1d 0% 50%) 50% / 16px 16px;
+    }
+
+    .preview-canvas-container {
+      max-width: 100%;
+      max-height: 500px;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      border-radius: 4px;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      background-color: rgba(17, 17, 17, 0.85);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      background-color: var(--surface-1);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-saving {
+      color: var(--success);
+    }
+
+    .stat-negative {
+      color: var(--error);
+    }
+
+    /* Action Toolbar */
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--surface-1);
+      border: 1px solid var(--accent);
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background-color: var(--surface-2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: var(--accent);
+      width: 0%;
+      transition: width 0.15s ease;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="workbench-container">
+    
+    <!-- HEADER -->
+    <header>
+      <h1>WebPDFOptimiser - Compressor</h1>
+      <p class="subtitle">Compress PDF file payloads, tune resolution DPI, and strip metadata locally inside your browser.</p>
+    </header>
+
+    <!-- MATERIAL INPUT / DROPZONE -->
+    <section>
+      <div id="dropzone" class="dropzone">
+        <svg class="drop-icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <div>
+          <strong style="color: var(--text-primary);">Drop PDF document here</strong> or <span style="color: var(--accent); text-decoration: underline;">select file</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">Supports standard PDF documents up to several hundred pages</p>
+        <button id="btn-sample" class="btn btn-sm" style="margin-top: 6px;">Load Demo Document</button>
+        <input type="file" id="file-input" class="file-input" accept="application/pdf">
+      </div>
+    </section>
+
+    <!-- WORKBENCH CONTROL PANEL -->
+    <section id="panel-controls" class="card hidden">
+      <div class="presets-bar">
+        <span style="font-size: 0.8rem; color: var(--text-muted); align-self: center; margin-right: 4px;">PRESETS:</span>
+        <button class="btn btn-sm" onclick="applyPreset('web-hd')">Web HD (Preserve Quality)</button>
+        <button class="btn btn-sm" onclick="applyPreset('balanced')">Balanced E-Book (150 DPI)</button>
+        <button class="btn btn-sm" onclick="applyPreset('scanned')">Scanned Doc (100 DPI)</button>
+        <button class="btn btn-sm" onclick="applyPreset('lossless')">Lossless Stream Cleanup</button>
+      </div>
+
+      <div class="controls-grid">
+        <!-- Compression Mode -->
+        <div class="control-group">
+          <label for="select-mode">Optimization Engine</label>
+          <select id="select-mode">
+            <option value="raster-smart" selected>Smart Render & Compress (Best Savings)</option>
+            <option value="stream-clean">Lossless Structural & Stream Cleanup</option>
+          </select>
+        </div>
+
+        <!-- Target DPI Resolution -->
+        <div class="control-group" id="group-dpi">
+          <label for="select-dpi">Target Resolution (DPI)</label>
+          <select id="select-dpi">
+            <option value="300">300 DPI (High Clarity / Print)</option>
+            <option value="200" selected>200 DPI (Web HD Crisp)</option>
+            <option value="150">150 DPI (Standard Screen / E-Book)</option>
+            <option value="100">100 DPI (Compact Document)</option>
+            <option value="72">72 DPI (Maximum Shrink)</option>
+          </select>
+        </div>
+
+        <!-- Image Quality Slider -->
+        <div class="control-group" id="group-quality">
+          <label for="input-quality">JPEG Stream Quality</label>
+          <div class="range-container">
+            <input type="range" id="input-quality" min="20" max="95" value="82">
+            <span id="label-quality" class="range-value">82%</span>
+          </div>
+        </div>
+
+        <!-- Metadata & Structural Options -->
+        <div class="control-group">
+          <label>Options</label>
+          <label class="checkbox-group">
+            <input type="checkbox" id="chk-strip-meta" checked>
+            <span>Strip EXIF / Document Metadata</span>
+          </label>
+          <label class="checkbox-group">
+            <input type="checkbox" id="chk-object-streams" checked>
+            <span>Compress Object Streams</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Processing Status Bar -->
+      <div id="processing-box" class="hidden" style="margin-top: 16px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+          <span id="progress-text">Compressing PDF...</span>
+          <span id="progress-percent" style="font-family: var(--font-mono);">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OUTPUT DOMINANCE PANEL -->
+    <section id="panel-output" class="output-section hidden">
+      <div class="output-header">
+        <h2 class="output-title">Optimization Preview</h2>
+        <span id="file-name-tag" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">document.pdf</span>
+      </div>
+
+      <!-- Page Renderer Viewport -->
+      <div class="viewport-card">
+        <div class="preview-canvas-container">
+          <canvas id="pdf-preview-canvas"></canvas>
+        </div>
+
+        <div class="pagination-bar">
+          <button class="btn btn-sm" id="btn-prev-page">◀ Prev</button>
+          <span>Page <strong id="page-num-tag" style="color:var(--text-primary);">1</strong> of <strong id="page-count-tag" style="color:var(--text-primary);">1</strong></span>
+          <button class="btn btn-sm" id="btn-next-page">Next ▶</button>
+        </div>
+      </div>
+
+      <!-- Live Metadata & Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Original Size</span>
+          <span id="stat-orig-size" class="stat-value">0 KB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Optimized Size</span>
+          <span id="stat-opt-size" class="stat-value">0 KB</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Space Saved</span>
+          <span id="stat-reduction" class="stat-value stat-saving">0%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Pages</span>
+          <span id="stat-pages" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="action-row">
+        <button class="btn" id="btn-copy-uri">Copy Data URI</button>
+        <button class="btn btn-primary" id="btn-download">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download Compressed PDF
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    <span id="toast-text">Copied to clipboard</span>
+  </div>
+
+  <script>
+    // PDF.js worker setup
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // Application State
+    let state = {
+      rawArrayBuffer: null,
+      fileName: 'document.pdf',
+      originalSize: 0,
+      compressedBlob: null,
+      compressedUrl: null,
+      compressedSize: 0,
+      pdfDoc: null,
+      totalPages: 0,
+      currentPage: 1,
+      mode: 'raster-smart',
+      dpi: 200,
+      quality: 0.82,
+      stripMeta: true,
+      compressStreams: true,
+      isProcessing: false,
+      debounceTimer: null
+    };
+
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const btnSample = document.getElementById('btn-sample');
+    const panelControls = document.getElementById('panel-controls');
+    const panelOutput = document.getElementById('panel-output');
+    
+    const selectMode = document.getElementById('select-mode');
+    const selectDpi = document.getElementById('select-dpi');
+    const groupDpi = document.getElementById('group-dpi');
+    const inputQuality = document.getElementById('input-quality');
+    const labelQuality = document.getElementById('label-quality');
+    const groupQuality = document.getElementById('group-quality');
+    const chkStripMeta = document.getElementById('chk-strip-meta');
+    const chkObjectStreams = document.getElementById('chk-object-streams');
+    
+    const fileNameTag = document.getElementById('file-name-tag');
+    const previewCanvas = document.getElementById('pdf-preview-canvas');
+    const btnPrevPage = document.getElementById('btn-prev-page');
+    const btnNextPage = document.getElementById('btn-next-page');
+    const pageNumTag = document.getElementById('page-num-tag');
+    const pageCountTag = document.getElementById('page-count-tag');
+
+    const statOrigSize = document.getElementById('stat-orig-size');
+    const statOptSize = document.getElementById('stat-opt-size');
+    const statReduction = document.getElementById('stat-reduction');
+    const statPages = document.getElementById('stat-pages');
+
+    const btnDownload = document.getElementById('btn-download');
+    const btnCopyUri = document.getElementById('btn-copy-uri');
+    const processingBox = document.getElementById('processing-box');
+    const progressText = document.getElementById('progress-text');
+    const progressPercent = document.getElementById('progress-percent');
+    const progressFill = document.getElementById('progress-fill');
+    const toast = document.getElementById('toast');
+
+    // Drag and Drop Logic
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFileSelection(files[0]);
+    });
+
+    dropzone.addEventListener('click', (e) => {
+      if (e.target !== btnSample) fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
+    });
+
+    btnSample.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadSamplePDF();
+    });
+
+    // Control Listeners
+    selectMode.addEventListener('change', () => {
+      state.mode = selectMode.value;
+      if (state.mode === 'stream-clean') {
+        groupDpi.classList.add('hidden');
+        groupQuality.classList.add('hidden');
+      } else {
+        groupDpi.classList.remove('hidden');
+        groupQuality.classList.remove('hidden');
+      }
+      triggerOptimization();
+    });
+
+    selectDpi.addEventListener('change', () => {
+      state.dpi = parseInt(selectDpi.value);
+      triggerOptimization();
+    });
+
+    inputQuality.addEventListener('input', () => {
+      labelQuality.textContent = `${inputQuality.value}%`;
+      state.quality = parseFloat(inputQuality.value) / 100;
+      triggerOptimizationDebounced();
+    });
+
+    chkStripMeta.addEventListener('change', () => {
+      state.stripMeta = chkStripMeta.checked;
+      triggerOptimization();
+    });
+
+    chkObjectStreams.addEventListener('change', () => {
+      state.compressStreams = chkObjectStreams.checked;
+      triggerOptimization();
+    });
+
+    // Page Pagination
+    btnPrevPage.addEventListener('click', () => {
+      if (state.currentPage > 1) {
+        state.currentPage--;
+        renderPagePreview(state.currentPage);
+      }
+    });
+
+    btnNextPage.addEventListener('click', () => {
+      if (state.currentPage < state.totalPages) {
+        state.currentPage++;
+        renderPagePreview(state.currentPage);
+      }
+    });
+
+    // Presets Action
+    window.applyPreset = function(presetName) {
+      if (presetName === 'web-hd') {
+        selectMode.value = 'raster-smart';
+        selectDpi.value = '200';
+        inputQuality.value = 85;
+      } else if (presetName === 'balanced') {
+        selectMode.value = 'raster-smart';
+        selectDpi.value = '150';
+        inputQuality.value = 75;
+      } else if (presetName === 'scanned') {
+        selectMode.value = 'raster-smart';
+        selectDpi.value = '100';
+        inputQuality.value = 60;
+      } else if (presetName === 'lossless') {
+        selectMode.value = 'stream-clean';
+      }
+      
+      selectMode.dispatchEvent(new Event('change'));
+      labelQuality.textContent = `${inputQuality.value}%`;
+      state.quality = parseFloat(inputQuality.value) / 100;
+    };
+
+    function handleFileSelection(file) {
+      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+        showToast('Please select a valid PDF document');
+        return;
+      }
+
+      state.fileName = file.name;
+      state.originalSize = file.size;
+      fileNameTag.textContent = `${file.name} (${formatBytes(file.size)})`;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        state.rawArrayBuffer = e.target.result;
+        
+        try {
+          const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer) });
+          state.pdfDoc = await loadingTask.promise;
+          state.totalPages = state.pdfDoc.numPages;
+          state.currentPage = 1;
+
+          pageCountTag.textContent = state.totalPages;
+          statPages.textContent = state.totalPages;
+
+          // Collapse Dropzone
+          dropzone.classList.add('dropzone-compact');
+          dropzone.innerHTML = `
+            <div><strong>${file.name}</strong> <span style="color:var(--text-muted);">(${formatBytes(file.size)} • ${state.totalPages} Pages)</span></div>
+            <button class="btn btn-sm" onclick="location.reload()">Change File</button>
+          `;
+
+          panelControls.classList.remove('hidden');
+          panelOutput.classList.remove('hidden');
+
+          await renderPagePreview(state.currentPage);
+          triggerOptimization();
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to parse PDF file');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Render Preview of specific page using PDF.js
+    async function renderPagePreview(pageNumber) {
+      if (!state.pdfDoc) return;
+      try {
+        const page = await state.pdfDoc.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1.2 });
+
+        previewCanvas.width = viewport.width;
+        previewCanvas.height = viewport.height;
+
+        const ctx = previewCanvas.getContext('2d');
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+
+        await page.render(renderContext).promise;
+        pageNumTag.textContent = pageNumber;
+      } catch (e) {
+        console.error("Preview render error:", e);
+      }
+    }
+
+    // Debounced optimization trigger
+    function triggerOptimizationDebounced() {
+      clearTimeout(state.debounceTimer);
+      state.debounceTimer = setTimeout(() => {
+        triggerOptimization();
+      }, 150);
+    }
+
+    async function triggerOptimization() {
+      if (!state.rawArrayBuffer || state.isProcessing) return;
+      
+      state.isProcessing = true;
+      showProgress(0, "Initializing PDF compression engine...");
+
+      try {
+        let compressedBytes;
+
+        if (state.mode === 'stream-clean') {
+          // Lossless object stream compression & metadata stripping
+          updateProgress(40, "Cleaning object streams & metadata...");
+          const pdfDoc = await PDFLib.PDFDocument.load(state.rawArrayBuffer);
+          
+          if (state.stripMeta) {
+            pdfDoc.setTitle('');
+            pdfDoc.setAuthor('');
+            pdfDoc.setSubject('');
+            pdfDoc.setKeywords([]);
+            pdfDoc.setProducer('WebPDFOptimiser Workbench');
+            pdfDoc.setCreator('WebPDFOptimiser Workbench');
+          }
+
+          compressedBytes = await pdfDoc.save({ useObjectStreams: state.compressStreams });
+          updateProgress(100, "Done!");
+        } else {
+          // Raster Re-encoding at Target DPI + JPEG Quantization
+          const srcPdf = await pdfjsLib.getDocument({ data: new Uint8Array(state.rawArrayBuffer) }).promise;
+          const newPdfDoc = await PDFLib.PDFDocument.create();
+
+          const scale = state.dpi / 72.0; // Standard PDF base points are 72 DPI
+
+          for (let i = 1; i <= srcPdf.numPages; i++) {
+            const pageProgress = Math.round(((i - 1) / srcPdf.numPages) * 90);
+            updateProgress(pageProgress, `Compressing page ${i} of ${srcPdf.numPages}...`);
+
+            const page = await srcPdf.getPage(i);
+            const viewport = page.getViewport({ scale: scale });
+
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = viewport.width;
+            offscreenCanvas.height = viewport.height;
+            const ctx = offscreenCanvas.getContext('2d');
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+            // Convert rendered canvas to compressed JPEG blob
+            const jpegDataUrl = offscreenCanvas.toDataURL('image/jpeg', state.quality);
+            const embeddedJpg = await newPdfDoc.embedJpg(jpegDataUrl);
+
+            // Maintain original dimensions in points (72 DPI reference)
+            const origViewport = page.getViewport({ scale: 1.0 });
+            const newPage = newPdfDoc.addPage([origViewport.width, origViewport.height]);
+
+            newPage.drawImage(embeddedJpg, {
+              x: 0,
+              y: 0,
+              width: origViewport.width,
+              height: origViewport.height,
+            });
+          }
+
+          if (state.stripMeta) {
+            newPdfDoc.setProducer('WebPDFOptimiser Workbench');
+            newPdfDoc.setCreator('WebPDFOptimiser Workbench');
+          }
+
+          updateProgress(95, "Finalizing compressed PDF assembly...");
+          compressedBytes = await newPdfDoc.save({ useObjectStreams: state.compressStreams });
+        }
+
+        // Output Blob Management
+        if (state.compressedUrl) {
+          URL.revokeObjectURL(state.compressedUrl);
+        }
+
+        state.compressedBlob = new Blob([compressedBytes], { type: 'application/pdf' });
+        state.compressedSize = state.compressedBlob.size;
+        state.compressedUrl = URL.createObjectURL(state.compressedBlob);
+
+        // Stats Updates
+        statOrigSize.textContent = formatBytes(state.originalSize);
+        statOptSize.textContent = formatBytes(state.compressedSize);
+
+        const diffBytes = state.originalSize - state.compressedSize;
+        const percentSaved = ((diffBytes / state.originalSize) * 100).toFixed(1);
+
+        if (diffBytes >= 0) {
+          statReduction.textContent = `-${percentSaved}%`;
+          statReduction.className = 'stat-value stat-saving';
+        } else {
+          statReduction.textContent = `+${Math.abs(percentSaved)}%`;
+          statReduction.className = 'stat-value stat-negative';
+        }
+
+        updateProgress(100, "Compression Complete");
+        setTimeout(hideProgress, 800);
+
+      } catch (err) {
+        console.error("Compression error:", err);
+        showToast("Error compressing PDF file");
+        hideProgress();
+      } finally {
+        state.isProcessing = false;
+      }
+    }
+
+    // Synthetic PDF Generator for Demonstration
+    async function loadSamplePDF() {
+      try {
+        showProgress(20, "Generating sample multi-page PDF...");
+        const pdfDoc = await PDFLib.PDFDocument.create();
+
+        // Page 1 - Title Banner
+        const page1 = pdfDoc.addPage([600, 800]);
+        page1.drawText("WORKBENCH PDF OPTIMIZER", { x: 50, y: 720, size: 28 });
+        page1.drawText("In-Browser Client PDF Compression Demo", { x: 50, y: 680, size: 16 });
+        
+        // Draw sample geometric graphics on Page 1
+        page1.drawRectangle({
+          x: 50, y: 400, width: 500, height: 240,
+          color: PDFLib.rgb(0.08, 0.2, 0.4)
+        });
+        page1.drawText("High Resolution Sample Graphic Content", { x: 70, y: 510, size: 18, color: PDFLib.rgb(1, 1, 1) });
+
+        // Page 2 - Text Grid
+        const page2 = pdfDoc.addPage([600, 800]);
+        page2.drawText("Page 2: Document Stream Sample Text", { x: 50, y: 740, size: 20 });
+        for (let i = 0; i < 20; i++) {
+          page2.drawText(`Line ${i+1}: Standard vector typography stream for local compression testing.`, {
+            x: 50, y: 680 - (i * 24), size: 12
+          });
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        const sampleBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const sampleFile = new File([sampleBlob], "sample-workbench-doc.pdf", { type: "application/pdf" });
+
+        hideProgress();
+        handleFileSelection(sampleFile);
+      } catch (err) {
+        console.error(err);
+        showToast("Error generating sample PDF");
+        hideProgress();
+      }
+    }
+
+    // Progress Helpers
+    function showProgress(percent, statusMsg) {
+      processingBox.classList.remove('hidden');
+      updateProgress(percent, statusMsg);
+    }
+
+    function updateProgress(percent, statusMsg) {
+      progressPercent.textContent = `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+      progressText.textContent = statusMsg;
+    }
+
+    function hideProgress() {
+      processingBox.classList.add('hidden');
+    }
+
+    // Output Toolbar Actions
+    btnDownload.addEventListener('click', () => {
+      if (!state.compressedBlob) return;
+      
+      const baseName = state.fileName ? state.fileName.replace(/\.[^/.]+$/, "") : "optimized";
+      const downloadLink = document.createElement('a');
+      downloadLink.href = state.compressedUrl;
+      downloadLink.download = `${baseName}-opt.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      showToast("Download started!");
+    });
+
+    btnCopyUri.addEventListener('click', () => {
+      if (!state.compressedBlob) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        copyToClipboard(reader.result, "PDF Data URI copied to clipboard!");
+      };
+      reader.readAsDataURL(state.compressedBlob);
+    });
+
+    // Helper functions
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function copyToClipboard(text, successMessage) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(successMessage));
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast(successMessage);
+      }
+    }
+
+    function showToast(msg) {
+      const toastText = document.getElementById('toast-text');
+      toastText.textContent = msg;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+  </script>
+</body>
+</html>
