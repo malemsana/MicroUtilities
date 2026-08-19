@@ -1,0 +1,50 @@
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/code-combine.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/longmaths.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/maniKeys.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/memberTree.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/metaHTML.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/pdfToImages.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/source-archive.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/textnormalizer.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/webImageOptimiser.html</loc>
+  </url>
+
+  <url>
+    <loc>https://malemsana.github.io/MicroUtilities/htmls/webPDFOptimiser.html</loc>
+  </url>
+
+</urlset>
+```
